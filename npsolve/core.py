@@ -30,9 +30,9 @@ class Partial():
         self.__npsolve_ret = ret
         self.__npsolve_state = state
         for name, slc in self._npsolve_slices.items():
-            self._set_state(name, state[slc])
+            self._set_local_state(name, state[slc])
     
-    def _set_state(self, name, view):
+    def _set_local_state(self, name, view):
         setattr(self, name, view)
     
     def _get_value(self, name):
@@ -49,6 +49,10 @@ class Partial():
 
     def _get_variables(self):
         return {n: self._variables[n] for n in self._names}
+
+    def get_state(self, name):
+        ''' Get the value for any state variable '''
+        return self.__npsolve_state[self._npsolve_slices[name]]
     
     def set_return(self, name, value):
         ''' Set the return value for a variable '''

@@ -75,3 +75,10 @@ class Test_Partial(unittest.TestCase):
         p.set_return('b', 300.0)
         self.assertEqual(ret[0], 55.1)
         self.assertEqual(ret[1], 300.0)
+
+    def test_get_state(self):
+        p, state, ret, slices = make_p()
+        a = p.get_state('a')
+        b = p.get_state('b')
+        self.assertEqual(a, 1.3)
+        self.assertEqual(b, 5.6)
