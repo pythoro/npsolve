@@ -12,23 +12,21 @@ sb = fw.SignalBox()
 
 SET_VECTORS = 'SET_VECTORS'
 GET_INIT = 'GET_INIT'
-GET_VARIABLES = 'GET_VARIABLES'
 VECTORS_SET = 'VECTORS_SET'
 
 class Partial():
     
     def __init__(self):
-        self._names = []
+        self._names = {}
         try:
             sb.get(SET_VECTORS, must_exist=True).connect(self._set_vectors)
             sb.get(GET_INIT, must_exist=True).connect(self._get_init)
-            sb.get(GET_VARIABLES, must_exist=True).connect(self._get_variables)
             sb.get(VECTORS_SET, must_exist=True).connect(self._vectors_set)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
     
     def _set_vectors(self, state, ret, slices):
-        self._npsolve_slices = {n: slices[n] for n in self._names}
+        self._npsolve_slices = {n: slices[n] for n in self._names.keys()}
         self.__npsolve_ret = ret
         self.__npsolve_state = state
     
@@ -44,11 +42,20 @@ class Partial():
         return getattr(self, name)
     
     def _get_init(self):
-        return {n: np.atleast_1d(self._get_value(n))
-                    for n in self._names}
+        return self._names
 
-    def _get_variables(self):
-        return {n: self._variables[n] for n in self._names}
+    def set_meta(self, name, **kwargs):
+        self._names[name].update(kwargs)
+
+    def set_init(self, name, init):
+        self._names[name]['init'] = np.atleast_1d(init)
+
+    def add_name(self, name, init, **kwargs):
+        if name in self._names:
+            raise KeyError(str(name) + ' already exists')
+        self._names[name] = {}
+        self.set_init(name, init)
+        self.set_meta(name, **kwargs)
 
     def get_state(self, name):
         ''' Copy the value for any state variable '''
@@ -76,19 +83,21 @@ class Solver():
         self._setup_signals()
         
     def _setup_signals(self):
-        signals = [SET_VECTORS, GET_INIT, GET_VARIABLES, VECTORS_SET]
+        signals = [SET_VECTORS, GET_INIT, VECTORS_SET]
         self._signals = {name: sb.get(name) for name in signals}
     
     def _setup_vecs(self, dct):
         slices = {}
+        meta = {}
         i = 0
-        for key, val in dct.items():
-            n = len(val)
+        for key, item in dct.items():
+            n = len(item['init'])
             slices[key] = slice(i, i+n)
+            meta[key] = item
             i += n
         state = np.zeros(i)
         for key, slc in slices.items():
-            state[slc] = dct[key]
+            state[slc] = dct[key]['init']
         ret = np.zeros(i)
         return slices, state, ret
         

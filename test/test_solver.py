@@ -8,7 +8,7 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, SET_VECTORS, GET_INIT, GET_VARIABLES, \
+from npsolve.core import sb, SET_VECTORS, GET_INIT, \
     VECTORS_SET, Solver
 
 
@@ -26,7 +26,7 @@ class Test_Solver(unittest.TestCase):
         
     def test_setup_vecs(self):
         s = S()
-        dct = {'a': np.array([1.1]), 'b': np.array([2.2])}
+        dct = {'a': {'init': np.array([1.1])}, 'b': {'init': np.array([2.2])}}
         slices, state, ret = s._setup_vecs(dct)
         self.assertEqual((state==np.array([1.1, 2.2])).all(), True)
         self.assertEqual(slices['a'], slice(0, 1))
@@ -36,10 +36,11 @@ class Test_Solver(unittest.TestCase):
         s = S()
         
         def get_init_a():
-            return {'a': np.array([1.1]), 'b': np.array([2.2])}
+            return {'a': {'init': np.array([1.1])},
+                    'b': {'init': np.array([2.2])}}
 
         def get_init_b():
-            return {'c': np.array([3.3, 4.4])}
+            return {'c': {'init': np.array([3.3, 4.4])}}
         
         s._signals[GET_INIT].connect(get_init_a)
         s._signals[GET_INIT].connect(get_init_b)

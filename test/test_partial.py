@@ -8,22 +8,20 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, SET_VECTORS, GET_INIT, GET_VARIABLES, \
+from npsolve.core import sb, SET_VECTORS, GET_INIT, \
     VECTORS_SET, Partial
 
 def make_signals():
     sb.get_active().clear()
-    s_names = [SET_VECTORS, GET_INIT, GET_VARIABLES, VECTORS_SET]
+    s_names = [SET_VECTORS, GET_INIT, VECTORS_SET]
     signals = {name: sb.get(name) for name in s_names}
     return signals
 
 class P(Partial):
     def __init__(self):
         super().__init__()
-        self._names = ['a', 'b']
-        self.a = 0.7
-        self.b = 5.0
-
+        self.add_name('a', init=0.7)
+        self.add_name('b', init=5.0)
 
 def make_p():
     signals = make_signals()
@@ -50,13 +48,22 @@ class Test_Partial(unittest.TestCase):
     def test_create(self):
         signals = make_signals()
         p = P()
+
+    def test_set_init(self):
+        signals = make_signals()
+        p = P()
+        p.set_init('a', 0.8)
+        p.set_init('b', 55.1)
+        dct = {'a': {'init': np.array([0.8])},
+               'b': {'init': np.array([55.1])}}
+        self.assertEqual(p._names, dct)
         
     def test_get_init(self):
         signals = make_signals()
         p = P()
         dicts = signals[GET_INIT].fetch_all()
-        dct = {'a': np.array([0.7]),
-               'b': np.array([5.0])}
+        dct = {'a': {'init': np.array([0.7])},
+               'b': {'init': np.array([5.0])}}
         self.assertEqual(dicts[0], dct)
         
     def test_set_vectors(self):
