@@ -8,11 +8,12 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, SET_VECTORS, GET_INIT, GET_VARIABLES, Partial
+from npsolve.core import sb, SET_VECTORS, GET_INIT, GET_VARIABLES, \
+    VECTORS_SET, Partial
 
 def make_signals():
     sb.get_active().clear()
-    s_names = [SET_VECTORS, GET_INIT, GET_VARIABLES]
+    s_names = [SET_VECTORS, GET_INIT, GET_VARIABLES, VECTORS_SET]
     signals = {name: sb.get(name) for name in s_names}
     return signals
 
@@ -33,6 +34,8 @@ def make_p():
     state = np.array([1.3, 5.6])
     ret = np.array([7.0, 6.3])
     signals[SET_VECTORS].emit(state=state, ret=ret, slices=slices)
+    p.a = p.get_state_view('a')
+    p.b = p.get_state_view('b')
     return p, state, ret, slices
 
 

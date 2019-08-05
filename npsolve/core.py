@@ -13,6 +13,7 @@ sb = fw.SignalBox()
 SET_VECTORS = 'SET_VECTORS'
 GET_INIT = 'GET_INIT'
 GET_VARIABLES = 'GET_VARIABLES'
+VECTORS_SET = 'VECTORS_SET'
 
 class Partial():
     
@@ -22,6 +23,7 @@ class Partial():
             sb.get(SET_VECTORS, must_exist=True).connect(self._set_vectors)
             sb.get(GET_INIT, must_exist=True).connect(self._get_init)
             sb.get(GET_VARIABLES, must_exist=True).connect(self._get_variables)
+            sb.get(VECTORS_SET, must_exist=True).connect(self._vectors_set)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
     
@@ -29,11 +31,9 @@ class Partial():
         self._npsolve_slices = {n: slices[n] for n in self._names}
         self.__npsolve_ret = ret
         self.__npsolve_state = state
-        for name, slc in self._npsolve_slices.items():
-            self._set_local_state(name, state[slc])
     
-    def _set_local_state(self, name, view):
-        setattr(self, name, view)
+    def _vectors_set(self):
+        pass
     
     def _get_value(self, name):
         ''' Method to get value of named variable
@@ -51,8 +51,18 @@ class Partial():
         return {n: self._variables[n] for n in self._names}
 
     def get_state(self, name):
-        ''' Get the value for any state variable '''
-        return self.__npsolve_state[self._npsolve_slices[name]]
+        ''' Copy the value for any state variable '''
+        return self.__npsolve_state[self._npsolve_slices[name]].copy()
+
+    def get_state_view(self, name):
+        ''' Get the numpy view of any state variable 
+        
+        Note:
+            The values are 'live'.
+        '''
+        view = self.__npsolve_state[self._npsolve_slices[name]]
+        view.flags['WRITEABLE'] = False
+        return view
     
     def set_return(self, name, value):
         ''' Set the return value for a variable '''
@@ -66,7 +76,7 @@ class Solver():
         self._setup_signals()
         
     def _setup_signals(self):
-        signals = [SET_VECTORS, GET_INIT, GET_VARIABLES]
+        signals = [SET_VECTORS, GET_INIT, GET_VARIABLES, VECTORS_SET]
         self._signals = {name: sb.get(name) for name in signals}
     
     def _setup_vecs(self, dct):
@@ -101,3 +111,4 @@ class Solver():
     def npsolve_init(self):
         self._get_init()
         self._set_vectors()
+        self._signals[VECTORS_SET].emit()

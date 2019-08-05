@@ -8,7 +8,8 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, SET_VECTORS, GET_INIT, GET_VARIABLES, Solver
+from npsolve.core import sb, SET_VECTORS, GET_INIT, GET_VARIABLES, \
+    VECTORS_SET, Solver
 
 
 
