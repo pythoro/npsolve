@@ -8,7 +8,7 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, SET_VECTORS, GET_INIT, \
+from npsolve.core import sb, SET_VECTORS, GET_VARS, \
     VECTORS_SET, Solver
 
 
@@ -42,8 +42,8 @@ class Test_Solver(unittest.TestCase):
         def get_init_b():
             return {'c': {'init': np.array([3.3, 4.4])}}
         
-        s._signals[GET_INIT].connect(get_init_a)
-        s._signals[GET_INIT].connect(get_init_b)
+        s._signals[GET_VARS].connect(get_init_a)
+        s._signals[GET_VARS].connect(get_init_b)
         
         s._get_init()
         state = s.npsolve_state

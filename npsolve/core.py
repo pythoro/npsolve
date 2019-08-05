@@ -11,16 +11,22 @@ import fastwire as fw
 sb = fw.SignalBox()
 
 SET_VECTORS = 'SET_VECTORS'
-GET_INIT = 'GET_INIT'
+GET_VARS = 'GET_VARS'
 VECTORS_SET = 'VECTORS_SET'
 
 class Partial():
+    ''' A base class responsible for a set of variables 
+    
+    Note:
+        __init__ method must be called.
+        
+    '''
     
     def __init__(self):
         self.npsolve_vars = {}
         try:
             sb.get(SET_VECTORS, must_exist=True).connect(self._set_vectors)
-            sb.get(GET_INIT, must_exist=True).connect(self._get_init)
+            sb.get(GET_VARS, must_exist=True).connect(self._get_init)
             sb.get(VECTORS_SET, must_exist=True).connect(self._vectors_set)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
@@ -31,6 +37,10 @@ class Partial():
         self.__npsolve_state = state
     
     def _vectors_set(self):
+        ''' Called after vectors are set 
+        
+        This provides opportunity to use methods such as get_state_view.
+        '''
         pass
     
     def _get_value(self, name):
@@ -41,16 +51,36 @@ class Partial():
         '''
         return getattr(self, name)
     
-    def _get_init(self):
+    def _get_vars(self):
         return self.npsolve_vars
 
     def set_meta(self, name, **kwargs):
+        ''' Set meta information for a variable 
+        
+        Args:
+            **kwargs: Key word attributes for the variable.
+        '''
         self.npsolve_vars[name].update(kwargs)
 
     def set_init(self, name, init):
+        ''' Set the initial value for a variable 
+        
+        Args:
+            name (str): The variable name
+            init (array-like): The initial value(s). Can be a scalar or 1D
+                ndarray.
+        '''
         self.npsolve_vars[name]['init'] = np.atleast_1d(init)
 
-    def add_name(self, name, init, **kwargs):
+    def add_var(self, name, init, **kwargs):
+        ''' Add a new variable 
+        
+        Args:
+            name (str): The variable name
+            init (array-like): The initial value(s). Can be a scalar or 1D
+                ndarray.
+            **kwargs: Optional kew word attributes for the variable.
+        '''
         if name in self.npsolve_vars:
             raise KeyError(str(name) + ' already exists')
         self.npsolve_vars[name] = {}
@@ -58,11 +88,25 @@ class Partial():
         self.set_meta(name, **kwargs)
 
     def get_state(self, name):
-        ''' Copy the value for any state variable '''
+        ''' Copy the value for any state variable 
+        
+        Args:
+            name (str): The variable name
+            
+        Returns:
+            ndarray: A copy of the variable values.
+
+        '''
         return self.__npsolve_state[self._npsolve_slices[name]].copy()
 
     def get_state_view(self, name):
         ''' Get the numpy view of any state variable 
+        
+        Args:
+            name (str): The variable name
+            
+        Returns:
+            ndarray: A (non-writable) view of the variable values.
         
         Note:
             The values are 'live'.
@@ -72,7 +116,15 @@ class Partial():
         return view
     
     def set_return(self, name, value):
-        ''' Set the return value for a variable '''
+        ''' Set the return value for a variable 
+        
+        Args:
+            name (str): The variable name
+            value (array-like): The value(s) to set.
+            
+        Note:
+            value must be the same shape as the 'init' value of the variable.
+        '''
         self.__npsolve_ret[self._npsolve_slices[name]] = value
     
     
@@ -83,7 +135,7 @@ class Solver():
         self._setup_signals()
         
     def _setup_signals(self):
-        signals = [SET_VECTORS, GET_INIT, VECTORS_SET]
+        signals = [SET_VECTORS, GET_VARS, VECTORS_SET]
         self._signals = {name: sb.get(name) for name in signals}
     
     def _setup_vecs(self, dct):
@@ -101,9 +153,9 @@ class Solver():
         ret = np.zeros(i)
         return slices, state, ret
         
-    def _get_init(self):
+    def _get_vars(self):
         dct = {}
-        dicts = self._signals[GET_INIT].fetch_all()
+        dicts = self._signals[GET_VARS].fetch_all()
         for d in dicts:
             for key in d.keys():
                 if key in dct:
@@ -118,6 +170,6 @@ class Solver():
                                    slices=self.npsolve_slices)
 
     def npsolve_init(self):
-        self._get_init()
+        self._get_vars()
         self._set_vectors()
         self._signals[VECTORS_SET].emit()
