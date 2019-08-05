@@ -27,9 +27,8 @@ class P(Partial):
 def make_p():
     signals = make_signals()
     p = P()
-    ID = str(id(p))
-    a = ID + 'a'
-    b = ID + 'b'
+    a = 'a'
+    b = 'b'
     slices = {a: slice(0, 1), b: slice(1, 2)}
     state = np.array([1.3, 5.6])
     ret = np.array([7.0, 6.3])
@@ -53,9 +52,8 @@ class Test_Partial(unittest.TestCase):
         signals = make_signals()
         p = P()
         dicts = signals[GET_INIT].fetch_all()
-        ID = str(id(p))
-        dct = {ID + 'a': np.array([0.7]),
-               ID + 'b': np.array([5.0])}
+        dct = {'a': np.array([0.7]),
+               'b': np.array([5.0])}
         self.assertEqual(dicts[0], dct)
         
     def test_set_vectors(self):

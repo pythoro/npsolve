@@ -18,7 +18,6 @@ class Partial():
     
     def __init__(self):
         self._names = []
-        self._id = str(id(self))
         try:
             sb.get(SET_VECTORS, must_exist=True).connect(self._set_vectors)
             sb.get(GET_INIT, must_exist=True).connect(self._get_init)
@@ -27,7 +26,7 @@ class Partial():
             raise KeyError('Solver must be created before Partial instance.')
     
     def _set_vectors(self, state, ret, slices):
-        self._npsolve_slices = {n: slices[self._id + n] for n in self._names}
+        self._npsolve_slices = {n: slices[n] for n in self._names}
         self.__npsolve_ret = ret
         self.__npsolve_state = state
         for name, slc in self._npsolve_slices.items():
@@ -45,11 +44,11 @@ class Partial():
         return getattr(self, name)
     
     def _get_init(self):
-        return {self._id + n: np.atleast_1d(self._get_value(n))
+        return {n: np.atleast_1d(self._get_value(n))
                     for n in self._names}
 
     def _get_variables(self):
-        return {self._id + n: self._variables[n] for n in self._names}
+        return {n: self._variables[n] for n in self._names}
     
     def set_return(self, name, value):
         ''' Set the return value for a variable '''
@@ -83,6 +82,10 @@ class Solver():
         dct = {}
         dicts = self._signals[GET_INIT].fetch_all()
         for d in dicts:
+            for key in d.keys():
+                if key in dct:
+                    raise KeyError('Variable "' + str(key) + '" is defined ' +
+                                   'by more than one Partial class.')
             dct.update(d)
         self.npsolve_slices, self.npsolve_state, self.npsolve_ret = self._setup_vecs(dct)
 
