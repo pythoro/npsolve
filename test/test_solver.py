@@ -8,7 +8,7 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, SET_VECTORS, GET_VARS, \
+from npsolve.core import sb, EMIT_VECTORS, GET_VARS, \
     VECTORS_SET, Solver
 
 
@@ -32,7 +32,7 @@ class Test_Solver(unittest.TestCase):
         self.assertEqual(slices['a'], slice(0, 1))
         self.assertEqual(slices['b'], slice(1, 2))
         
-    def test_get_init(self):
+    def test_fetch_vars(self):
         s = S()
         
         def get_init_a():
@@ -45,7 +45,7 @@ class Test_Solver(unittest.TestCase):
         s._signals[GET_VARS].connect(get_init_a)
         s._signals[GET_VARS].connect(get_init_b)
         
-        s._get_init()
+        s._fetch_vars()
         state = s.npsolve_state
         slices = s.npsolve_slices
         self.assertEqual((state==np.array([1.1, 2.2, 3.3, 4.4])).all(), True)
@@ -53,7 +53,7 @@ class Test_Solver(unittest.TestCase):
         self.assertEqual(slices['b'], slice(1, 2))
         self.assertEqual(slices['c'], slice(2, 4))
 
-    def test_set_vectors(self):
+    def test_emit_vectors(self):
         s = S()
         s.npsolve_state = np.array([1.1, 2.2, 3.3, 4.4])
         s.npsolve_ret = np.zeros(4)
@@ -67,9 +67,9 @@ class Test_Solver(unittest.TestCase):
             dct['ret'] = ret
             dct['slices'] = slices
             
-        s._signals[SET_VECTORS].connect(test_receiver)
+        s._signals[EMIT_VECTORS].connect(test_receiver)
         
-        s._set_vectors()
+        s._emit_vectors()
     
         self.assertEqual((dct['state']==s.npsolve_state).all(), True)
         self.assertEqual((dct['ret']==s.npsolve_ret).all(), True)

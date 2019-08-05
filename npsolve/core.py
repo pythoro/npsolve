@@ -10,7 +10,7 @@ import fastwire as fw
 
 sb = fw.SignalBox()
 
-SET_VECTORS = 'SET_VECTORS'
+EMIT_VECTORS = 'EMIT_VECTORS'
 GET_VARS = 'GET_VARS'
 VECTORS_SET = 'VECTORS_SET'
 
@@ -25,8 +25,8 @@ class Partial():
     def __init__(self):
         self.npsolve_vars = {}
         try:
-            sb.get(SET_VECTORS, must_exist=True).connect(self._set_vectors)
-            sb.get(GET_VARS, must_exist=True).connect(self._get_init)
+            sb.get(EMIT_VECTORS, must_exist=True).connect(self._set_vectors)
+            sb.get(GET_VARS, must_exist=True).connect(self._get_vars)
             sb.get(VECTORS_SET, must_exist=True).connect(self._vectors_set)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
@@ -135,10 +135,12 @@ class Solver():
         self._setup_signals()
         
     def _setup_signals(self):
-        signals = [SET_VECTORS, GET_VARS, VECTORS_SET]
+        ''' Setup the signals that Partial instances will require '''
+        signals = [EMIT_VECTORS, GET_VARS, VECTORS_SET]
         self._signals = {name: sb.get(name) for name in signals}
     
     def _setup_vecs(self, dct):
+        ''' Create vectors and slices based on a dictionary of variables '''
         slices = {}
         meta = {}
         i = 0
@@ -153,7 +155,8 @@ class Solver():
         ret = np.zeros(i)
         return slices, state, ret
         
-    def _get_vars(self):
+    def _fetch_vars(self):
+        ''' Collect variable data from connected Partial instances '''
         dct = {}
         dicts = self._signals[GET_VARS].fetch_all()
         for d in dicts:
@@ -164,12 +167,13 @@ class Solver():
             dct.update(d)
         self.npsolve_slices, self.npsolve_state, self.npsolve_ret = self._setup_vecs(dct)
 
-    def _set_vectors(self):
-        self._signals[SET_VECTORS].emit(state=self.npsolve_state,
+    def _emit_vectors(self):
+        ''' Pass out vectors and slices to connected Partial instances '''
+        self._signals[EMIT_VECTORS].emit(state=self.npsolve_state,
                                    ret=self.npsolve_ret,
                                    slices=self.npsolve_slices)
 
     def npsolve_init(self):
-        self._get_vars()
-        self._set_vectors()
+        self._fetch_vars()
+        self._emit_vectors()
         self._signals[VECTORS_SET].emit()
