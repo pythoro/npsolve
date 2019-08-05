@@ -17,7 +17,7 @@ VECTORS_SET = 'VECTORS_SET'
 class Partial():
     
     def __init__(self):
-        self._names = {}
+        self.npsolve_vars = {}
         try:
             sb.get(SET_VECTORS, must_exist=True).connect(self._set_vectors)
             sb.get(GET_INIT, must_exist=True).connect(self._get_init)
@@ -26,7 +26,7 @@ class Partial():
             raise KeyError('Solver must be created before Partial instance.')
     
     def _set_vectors(self, state, ret, slices):
-        self._npsolve_slices = {n: slices[n] for n in self._names.keys()}
+        self._npsolve_slices = {n: slices[n] for n in self.npsolve_vars.keys()}
         self.__npsolve_ret = ret
         self.__npsolve_state = state
     
@@ -42,18 +42,18 @@ class Partial():
         return getattr(self, name)
     
     def _get_init(self):
-        return self._names
+        return self.npsolve_vars
 
     def set_meta(self, name, **kwargs):
-        self._names[name].update(kwargs)
+        self.npsolve_vars[name].update(kwargs)
 
     def set_init(self, name, init):
-        self._names[name]['init'] = np.atleast_1d(init)
+        self.npsolve_vars[name]['init'] = np.atleast_1d(init)
 
     def add_name(self, name, init, **kwargs):
-        if name in self._names:
+        if name in self.npsolve_vars:
             raise KeyError(str(name) + ' already exists')
-        self._names[name] = {}
+        self.npsolve_vars[name] = {}
         self.set_init(name, init)
         self.set_meta(name, **kwargs)
 

@@ -56,7 +56,7 @@ class Test_Partial(unittest.TestCase):
         p.set_init('b', 55.1)
         dct = {'a': {'init': np.array([0.8])},
                'b': {'init': np.array([55.1])}}
-        self.assertEqual(p._names, dct)
+        self.assertEqual(p.npsolve_vars, dct)
         
     def test_get_init(self):
         signals = make_signals()
