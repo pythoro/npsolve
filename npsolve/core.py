@@ -15,8 +15,6 @@ GET_VARS = 'GET_VARS'
 VECTORS_SET = 'VECTORS_SET'
 GET_CACHE_CLEAR_FUNCTIONS = 'GET_CACHE_CLEAR_FUNCTIONS'
 
-# Could use global cache for multi_cached - then just clear it when stepping.
-
 
 class Partial():
     ''' A base class responsible for a set of variables 
@@ -157,7 +155,13 @@ class Solver():
         self._signals = {name: sb.get(name) for name in signals}
     
     def _setup_vecs(self, dct):
-        ''' Create vectors and slices based on a dictionary of variables '''
+        ''' Create vectors and slices based on a dictionary of variables 
+        
+        Args:
+            dct (dict): A dictionary in which keys are variable names and
+                values are dictionaries of attributes, which include an
+                'init' entry for initial value.
+        '''
         slices = {}
         meta = {}
         i = 0
@@ -191,14 +195,17 @@ class Solver():
                                    slices=self.npsolve_slices)
 
     def _store_cache_clear_functions(self):
+        ''' Collect functions that clear cached values '''
         fs = self._signals[GET_CACHE_CLEAR_FUNCTIONS].fetch_all()
         self._cache_clear_functions = [f for lst in fs for f in lst]
 
     def npsolve_init(self):
+        ''' Initialise the Partials and be ready to solve '''
         self._fetch_vars()
         self._emit_vectors()
         self._signals[VECTORS_SET].emit()
         
     def cache_clear(self):
+        ''' Clear cached values (e.g. between time steps) '''
         for cache_clear in self._cache_clear_functions:
             cache_clear()
