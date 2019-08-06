@@ -9,12 +9,12 @@ import unittest
 import numpy as np
 
 from npsolve.core import sb, EMIT_VECTORS, GET_VARS, \
-    VECTORS_SET, GET_CACHE_CLEAR_FUNCTIONS, Partial
+    Partial
 from npsolve.cache import multi_cached, mono_cached
 
 def make_signals():
     sb.get_active().clear()
-    s_names = [EMIT_VECTORS, GET_VARS, VECTORS_SET, GET_CACHE_CLEAR_FUNCTIONS]
+    s_names = [EMIT_VECTORS, GET_VARS]
     signals = {name: sb.get(name) for name in s_names}
     return signals
 
@@ -51,8 +51,8 @@ def make_partial(cls=P):
     state = np.array([1.3, 5.6])
     ret = np.array([7.0, 6.3])
     signals[EMIT_VECTORS].emit(state=state, ret=ret, slices=slices)
-    p.a = p.get_state_view('a')
-    p.b = p.get_state_view('b')
+    p.a = p.get_state_view('a', state, slices)
+    p.b = p.get_state_view('b', state, slices)
     return p, state, ret, slices
 
 
@@ -98,17 +98,10 @@ class Test_Partial(unittest.TestCase):
         self.assertEqual(p.a, 33.0)
         self.assertEqual(p.b, 66.0)
 
-    def test_set_return(self):
-        p, state, ret, slices = make_partial()
-        p.set_return('a', 55.1)
-        p.set_return('b', 300.0)
-        self.assertEqual(ret[0], 55.1)
-        self.assertEqual(ret[1], 300.0)
-
     def test_get_state(self):
         p, state, ret, slices = make_partial()
-        a = p.get_state('a')
-        b = p.get_state('b')
+        a = p.get_state('a', state, slices)
+        b = p.get_state('b', state, slices)
         self.assertEqual(a, 1.3)
         self.assertEqual(b, 5.6)
         
@@ -176,10 +169,19 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
     def test_get_cache_clear_functions(self):
         signals = make_signals()
         p = Cached()
-        lst = sb.get(GET_CACHE_CLEAR_FUNCTIONS).fetch_all()
-        self.assertEqual(len(lst[0]), 4)
-        for f in lst[0]:
+        lst = p._get_cache_clear_functions()
+        self.assertEqual(len(lst), 4)
+        for f in lst:
             self.assertEqual(callable(f), True)
+            
+    def test_cache_clear_functions(self):
+        signals = make_signals()
+        p = Cached()
+        p.mono.cache_enable()
+        p.multi.cache_enable()
+        ret_2 = p.multi(5.21)
+        p.cache_clear()
+        self.assertEqual(len(p.multi.__closure__[0].cell_contents), 0)
         
 
 class Test_Partial_Multi_Caching(unittest.TestCase):

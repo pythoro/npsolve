@@ -12,8 +12,6 @@ sb = fw.SignalBox()
 
 EMIT_VECTORS = 'EMIT_VECTORS'
 GET_VARS = 'GET_VARS'
-VECTORS_SET = 'VECTORS_SET'
-GET_CACHE_CLEAR_FUNCTIONS = 'GET_CACHE_CLEAR_FUNCTIONS'
 
 
 class Partial():
@@ -26,27 +24,17 @@ class Partial():
     
     def __init__(self):
         self.npsolve_vars = {}
+        self.__cache_clear_functions = self._get_cache_clear_functions()
         try:
-            sb.get(EMIT_VECTORS, must_exist=True).connect(self._set_vectors)
+            sb.get(EMIT_VECTORS, must_exist=True).connect(self.set_vectors)
             sb.get(GET_VARS, must_exist=True).connect(self._get_vars)
-            sb.get(VECTORS_SET, must_exist=True).connect(self._vectors_set)
-            sb.get(GET_CACHE_CLEAR_FUNCTIONS,
-                   must_exist=True).connect(self._get_cache_clear_functions)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
     
-    def _set_vectors(self, state, ret, slices):
-        self._npsolve_slices = {n: slices[n] for n in self.npsolve_vars.keys()}
-        self.__npsolve_ret = ret
-        self.__npsolve_state = state
-    
-    def _vectors_set(self):
-        ''' Called after vectors are set 
-        
-        This provides opportunity to use methods such as get_state_view.
-        '''
+    def set_vectors(self, state, ret, slices):
+        ''' Override to set up views of the state vector '''
         pass
-       
+    
     def _get_vars(self):
         return self.npsolve_vars
 
@@ -83,7 +71,7 @@ class Partial():
         self.set_init(name, init)
         self.set_meta(name, **kwargs)
 
-    def get_state(self, name):
+    def get_state(self, name, state, slices):
         ''' Copy the value for any state variable 
         
         Args:
@@ -93,9 +81,9 @@ class Partial():
             ndarray: A copy of the variable values.
 
         '''
-        return self.__npsolve_state[self._npsolve_slices[name]].copy()
+        return state[slices[name]].copy()
 
-    def get_state_view(self, name):
+    def get_state_view(self, name, state, slices):
         ''' Get the numpy view of any state variable 
         
         Args:
@@ -107,22 +95,10 @@ class Partial():
         Note:
             The values are 'live'.
         '''
-        view = self.__npsolve_state[self._npsolve_slices[name]]
+        view = state[slices[name]]
         view.flags['WRITEABLE'] = False
         return view
-    
-    def set_return(self, name, value):
-        ''' Set the return value for a variable 
         
-        Args:
-            name (str): The variable name
-            value (array-like): The value(s) to set.
-            
-        Note:
-            value must be the same shape as the 'init' value of the variable.
-        '''
-        self.__npsolve_ret[self._npsolve_slices[name]] = value
-    
     def _get_cache_clear_functions(self):
         functions = []
         for name in dir(self):
@@ -132,6 +108,14 @@ class Partial():
             if hasattr(func, 'cacheable'):
                 functions.append(func.cache_clear)
         return functions
+    
+    def cache_clear(self):
+        for f in self.__cache_clear_functions:
+            f()
+            
+    def step(self, state, slices, t):
+        self.cache_clear()
+        # return dict with key and return values.
 
 
 class Solver():
@@ -143,7 +127,7 @@ class Solver():
         
     def _setup_signals(self):
         ''' Setup the signals that Partial instances will require '''
-        signals = [EMIT_VECTORS, GET_VARS, VECTORS_SET, GET_CACHE_CLEAR_FUNCTIONS]
+        signals = [EMIT_VECTORS, GET_VARS]
         self._signals = {name: sb.get(name) for name in signals}
     
     def _setup_vecs(self, dct):
@@ -186,23 +170,11 @@ class Solver():
                                    ret=self.npsolve_ret,
                                    slices=self.npsolve_slices)
 
-    def _store_cache_clear_functions(self):
-        ''' Collect functions that clear cached values '''
-        fs = self._signals[GET_CACHE_CLEAR_FUNCTIONS].fetch_all()
-        self._cache_clear_functions = [f for lst in fs for f in lst]
-
     def npsolve_init(self):
         ''' Initialise the Partials and be ready to solve '''
         self._fetch_vars()
         self._emit_vectors()
-        self._store_cache_clear_functions()
-        self._signals[VECTORS_SET].emit()
-        
-    def cache_clear(self):
-        ''' Clear cached values (e.g. between time steps) '''
-        for cache_clear in self._cache_clear_functions:
-            cache_clear()
-            
+                    
     def step(self, vec):
-        self.cache_clear()
+        pass
         
