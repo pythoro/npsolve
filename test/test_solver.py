@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 
 from npsolve.core import sb, EMIT_VECTORS, GET_VARS, \
-    VECTORS_SET, Solver
+    VECTORS_SET, GET_CACHE_CLEAR_FUNCTIONS, Solver
 
 
 

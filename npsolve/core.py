@@ -13,6 +13,10 @@ sb = fw.SignalBox()
 EMIT_VECTORS = 'EMIT_VECTORS'
 GET_VARS = 'GET_VARS'
 VECTORS_SET = 'VECTORS_SET'
+GET_CACHE_CLEAR_FUNCTIONS = 'GET_CACHE_CLEAR_FUNCTIONS'
+
+# Could use global cache for multi_cached - then just clear it when stepping.
+
 
 class Partial():
     ''' A base class responsible for a set of variables 
@@ -28,6 +32,8 @@ class Partial():
             sb.get(EMIT_VECTORS, must_exist=True).connect(self._set_vectors)
             sb.get(GET_VARS, must_exist=True).connect(self._get_vars)
             sb.get(VECTORS_SET, must_exist=True).connect(self._vectors_set)
+            sb.get(GET_CACHE_CLEAR_FUNCTIONS,
+                   must_exist=True).connect(self._get_cache_clear_functions)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
     
@@ -127,16 +133,27 @@ class Partial():
         '''
         self.__npsolve_ret[self._npsolve_slices[name]] = value
     
-    
+    def _get_cache_clear_functions(self):
+        functions = []
+        for name in dir(self):
+            if name.startswith('__') and name.endswith('__'):
+                continue
+            func = getattr(self, name, None)
+            if hasattr(func, 'cacheable'):
+                functions.append(func.cache_clear)
+        return functions
+
+
 class Solver():
     
     def __init__(self):
         self._container_id = sb.add(remove_with=self)
         self._setup_signals()
+        self._cache_clear_functions = []
         
     def _setup_signals(self):
         ''' Setup the signals that Partial instances will require '''
-        signals = [EMIT_VECTORS, GET_VARS, VECTORS_SET]
+        signals = [EMIT_VECTORS, GET_VARS, VECTORS_SET, GET_CACHE_CLEAR_FUNCTIONS]
         self._signals = {name: sb.get(name) for name in signals}
     
     def _setup_vecs(self, dct):
@@ -173,7 +190,15 @@ class Solver():
                                    ret=self.npsolve_ret,
                                    slices=self.npsolve_slices)
 
+    def _store_cache_clear_functions(self):
+        fs = self._signals[GET_CACHE_CLEAR_FUNCTIONS].fetch_all()
+        self._cache_clear_functions = [f for lst in fs for f in lst]
+
     def npsolve_init(self):
         self._fetch_vars()
         self._emit_vectors()
         self._signals[VECTORS_SET].emit()
+        
+    def cache_clear(self):
+        for cache_clear in self._cache_clear_functions:
+            cache_clear()
