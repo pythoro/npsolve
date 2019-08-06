@@ -46,15 +46,7 @@ class Partial():
         This provides opportunity to use methods such as get_state_view.
         '''
         pass
-    
-    def _get_value(self, name):
-        ''' Method to get value of named variable
-        
-        Note:
-            Can be overriden to customise this behaviour.
-        '''
-        return getattr(self, name)
-    
+       
     def _get_vars(self):
         return self.npsolve_vars
 
@@ -203,9 +195,14 @@ class Solver():
         ''' Initialise the Partials and be ready to solve '''
         self._fetch_vars()
         self._emit_vectors()
+        self._store_cache_clear_functions()
         self._signals[VECTORS_SET].emit()
         
     def cache_clear(self):
         ''' Clear cached values (e.g. between time steps) '''
         for cache_clear in self._cache_clear_functions:
             cache_clear()
+            
+    def step(self, vec):
+        self.cache_clear()
+        
