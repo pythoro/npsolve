@@ -75,4 +75,35 @@ class Test_Solver(unittest.TestCase):
         self.assertEqual((dct['ret']==s.npsolve_ret).all(), True)
         self.assertEqual(dct['slices'], s.npsolve_slices)
 
+    def test_store_cache_clear_functions(self):
+        s = S()
+        tester = []
+        def test_clear():
+            tester.append(len(tester))
+        
+        def get_cache_clear():
+            return [test_clear]
+        
+        s._signals[GET_CACHE_CLEAR_FUNCTIONS].connect(get_cache_clear)        
+        s._store_cache_clear_functions()
+        fs = s._cache_clear_functions
+        self.assertEqual(fs, [test_clear])
+        
+    def test_store_cache_clear(self):
+        s = S()
+        tester = []
+        def test_clear():
+            tester.append(len(tester))
+        
+        def get_cache_clear():
+            return [test_clear]
+        
+        s._signals[GET_CACHE_CLEAR_FUNCTIONS].connect(get_cache_clear)        
+        s._store_cache_clear_functions()
+        fs = s._cache_clear_functions
+        self.assertEqual(fs, [test_clear])
+        s.cache_clear()
+        self.assertEqual(tester, [0])
+        s.cache_clear()
+        self.assertEqual(tester, [0, 1])
         

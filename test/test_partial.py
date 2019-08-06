@@ -173,6 +173,14 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
         ret_3 = p.mono_b(100)
         self.assertEqual(ret_3, 100)
         
+    def test_get_cache_clear_functions(self):
+        signals = make_signals()
+        p = Cached()
+        lst = sb.get(GET_CACHE_CLEAR_FUNCTIONS).fetch_all()
+        self.assertEqual(len(lst[0]), 4)
+        for f in lst[0]:
+            self.assertEqual(callable(f), True)
+        
 
 class Test_Partial_Multi_Caching(unittest.TestCase):
 
