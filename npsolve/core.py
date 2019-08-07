@@ -12,7 +12,7 @@ sb = fw.SignalBox()
 
 EMIT_VECTORS = 'EMIT_VECTORS'
 GET_VARS = 'GET_VARS'
-
+GET_STEP_METHODS = 'GET_STEP_METHODS'
 
 class Partial():
     ''' A base class responsible for a set of variables 
@@ -28,10 +28,11 @@ class Partial():
         try:
             sb.get(EMIT_VECTORS, must_exist=True).connect(self.set_vectors)
             sb.get(GET_VARS, must_exist=True).connect(self._get_vars)
+            sb.get(GET_STEP_METHODS, must_exist=True).connect(self._get_step_methods)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
     
-    def set_vectors(self, state, ret, slices):
+    def set_vectors(self, state_dct, ret_dct):
         ''' Override to set up views of the state vector '''
         pass
     
@@ -70,34 +71,6 @@ class Partial():
         self.npsolve_vars[name] = {}
         self.set_init(name, init)
         self.set_meta(name, **kwargs)
-
-    def get_state(self, name, state, slices):
-        ''' Copy the value for any state variable 
-        
-        Args:
-            name (str): The variable name
-            
-        Returns:
-            ndarray: A copy of the variable values.
-
-        '''
-        return state[slices[name]].copy()
-
-    def get_state_view(self, name, state, slices):
-        ''' Get the numpy view of any state variable 
-        
-        Args:
-            name (str): The variable name
-            
-        Returns:
-            ndarray: A (non-writable) view of the variable values.
-        
-        Note:
-            The values are 'live'.
-        '''
-        view = state[slices[name]]
-        view.flags['WRITEABLE'] = False
-        return view
         
     def _get_cache_clear_functions(self):
         functions = []
@@ -110,10 +83,12 @@ class Partial():
         return functions
     
     def cache_clear(self):
-        for f in self.__cache_clear_functions:
-            f()
-            
-    def step(self, state, slices, t):
+        [f() for f in self.__cache_clear_functions]
+    
+    def _get_step_methods(self):
+        return self.step
+    
+    def step(self, state_dct, *args):
         self.cache_clear()
         # return dict with key and return values.
 
@@ -127,7 +102,7 @@ class Solver():
         
     def _setup_signals(self):
         ''' Setup the signals that Partial instances will require '''
-        signals = [EMIT_VECTORS, GET_VARS]
+        signals = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS]
         self._signals = {name: sb.get(name) for name in signals}
     
     def _setup_vecs(self, dct):
@@ -152,6 +127,19 @@ class Solver():
         ret = np.zeros(i)
         return slices, state, ret
         
+    def _make_dcts(self, slices, state, ret):
+        ''' Dictionary of numpy views '''
+        state_dct = {}
+        ret_dct = {}
+        for name, slc in slices.items():
+            state_view = state[slc]
+            state_view.flags['WRITEABLE'] = False
+            state_dct[name] = state_view
+
+            ret_view = state[slc]
+            ret_dct[name] = ret_view
+        return state_dct, ret_dct
+    
     def _fetch_vars(self):
         ''' Collect variable data from connected Partial instances '''
         dct = {}
@@ -162,19 +150,45 @@ class Solver():
                     raise KeyError('Variable "' + str(key) + '" is defined ' +
                                    'by more than one Partial class.')
             dct.update(d)
-        self.npsolve_slices, self.npsolve_state, self.npsolve_ret = self._setup_vecs(dct)
-
+        return dct
+        
     def _emit_vectors(self):
         ''' Pass out vectors and slices to connected Partial instances '''
-        self._signals[EMIT_VECTORS].emit(state=self.npsolve_state,
-                                   ret=self.npsolve_ret,
-                                   slices=self.npsolve_slices)
+        self._signals[EMIT_VECTORS].emit(
+                state_dct=self.npsolve_state_dct,
+                ret_dct=self.npsolve_ret_dct)
+
+    def _fetch_step_methods(self):
+        lst = self._signals[GET_STEP_METHODS].fetch_all()
+        out = []
+        for ret in lst:
+            if isinstance(ret, list):
+                out.extend(ret)
+            else:
+                out.append(ret)
+        return out
 
     def npsolve_init(self):
         ''' Initialise the Partials and be ready to solve '''
-        self._fetch_vars()
+        dct = self._fetch_vars()
+        slices, state, ret = self._setup_vecs(dct)
+        state_dct, ret_dct = self._make_dcts(slices, state, ret)
+        self.npsolve_slices = slices
+        self.npsolve_state = state
+        self.npsolve_ret = ret
+        self.npsolve_state_dct = state_dct
+        self.npsolve_ret_dct = ret_dct
         self._emit_vectors()
+        self._step_methods = self._fetch_step_methods()
                     
-    def step(self, vec):
-        pass
+    def step(self, vec, *args):
+        self.npsolve_state[:] = vec
+        state_dct = self.npsolve_state_dct
+        ret_dct = self.npsolve_ret_dct
+        dct = {}
+        for step in self._step_methods:
+            dct.update(step(state_dct, *args))
+        for name, val in dct.items():
+            ret_dct[name][:] = val
+        return self.npsolve_ret
         

@@ -8,13 +8,13 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, EMIT_VECTORS, GET_VARS, \
+from npsolve.core import sb, EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, \
     Partial
 from npsolve.cache import multi_cached, mono_cached
 
 def make_signals():
     sb.get_active().clear()
-    s_names = [EMIT_VECTORS, GET_VARS]
+    s_names = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS]
     signals = {name: sb.get(name) for name in s_names}
     return signals
 
@@ -23,6 +23,12 @@ class P(Partial):
         super().__init__()
         self.add_var('a', init=0.7)
         self.add_var('b', init=5.0)
+        
+    def step(self, state_dct, *args):
+        super().step(state_dct, *args)
+        a = state_dct['a']
+        return {'a': a*2}
+        
 
 class Cached(P):
     @mono_cached()
@@ -45,15 +51,18 @@ class Cached(P):
 def make_partial(cls=P):
     signals = make_signals()
     p = cls()
-    a = 'a'
-    b = 'b'
-    slices = {a: slice(0, 1), b: slice(1, 2)}
     state = np.array([1.3, 5.6])
-    ret = np.array([7.0, 6.3])
-    signals[EMIT_VECTORS].emit(state=state, ret=ret, slices=slices)
-    p.a = p.get_state_view('a', state, slices)
-    p.b = p.get_state_view('b', state, slices)
-    return p, state, ret, slices
+    ret = np.zeros(2)
+    a_arr = state[0:1]
+    a_arr.flags['WRITEABLE'] = False
+    b_arr = state[1:2]
+    b_arr.flags['WRITEABLE'] = False
+    state_dct = {'a': a_arr, 'b': b_arr}
+    ret_dct = {'a': ret[0:1], 'b': ret[1:2]}
+    signals[EMIT_VECTORS].emit(state_dct=state_dct, ret_dct=ret_dct)
+    p.a = state_dct['a']
+    p.b = state_dct['b']
+    return p, state, ret, state_dct, ret_dct
 
 
 class Test_Partial(unittest.TestCase):
@@ -86,24 +95,35 @@ class Test_Partial(unittest.TestCase):
         self.assertEqual(dicts[0], dct)
         
     def test_set_vectors(self):
-        p, state, ret, slices = make_partial()
-        self.assertEqual(p.a, 1.3)
+        p, state, ret, state_dct, ret_dct = make_partial()
+        self.assertEqual(p.a, np.array([1.3]))
         self.assertEqual(p.a.flags['OWNDATA'], False)
-        self.assertEqual(p.b, 5.6)
+        self.assertEqual(p.b, np.array([5.6]))
         self.assertEqual(p.b.flags['OWNDATA'], False)
 
     def test_update_state(self):
-        p, state, ret, slices = make_partial()
+        p, state, ret, state_dct, ret_dct = make_partial()
         state[:] = [33.0, 66.0]
         self.assertEqual(p.a, 33.0)
         self.assertEqual(p.b, 66.0)
 
     def test_get_state(self):
-        p, state, ret, slices = make_partial()
-        a = p.get_state('a', state, slices)
-        b = p.get_state('b', state, slices)
+        p, state, ret, state_dct, ret_dct = make_partial()
+        a = state_dct['a']
+        b = state_dct['b']
         self.assertEqual(a, 1.3)
         self.assertEqual(b, 5.6)
+
+    def test_fetch_step(self):
+        p, state, ret, state_dct, ret_dct = make_partial()
+        lst = sb.get(GET_STEP_METHODS).fetch_all()
+        self.assertEqual(lst[0], p.step)
+        
+    def test_step(self):
+        p, state, ret, state_dct, ret_dct = make_partial()
+        a = state_dct['a']
+        a_ret = p.step(state_dct)
+        self.assertEqual(a_ret, {'a': a*2})
         
                 
 class Test_Partial_Mono_Caching(unittest.TestCase):
@@ -173,16 +193,7 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
         self.assertEqual(len(lst), 4)
         for f in lst:
             self.assertEqual(callable(f), True)
-            
-    def test_cache_clear_functions(self):
-        signals = make_signals()
-        p = Cached()
-        p.mono.cache_enable()
-        p.multi.cache_enable()
-        ret_2 = p.multi(5.21)
-        p.cache_clear()
-        self.assertEqual(len(p.multi.__closure__[0].cell_contents), 0)
-        
+                
 
 class Test_Partial_Multi_Caching(unittest.TestCase):
 
