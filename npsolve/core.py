@@ -174,6 +174,7 @@ class Solver():
         return out
 
     def fetch_partials(self):
+        ''' Fetch a dictionary of all connected Partial instances '''
         lst = self._signals[GET_PARTIALS].fetch_all()
         dct = {}
         for partial in lst:
@@ -198,6 +199,7 @@ class Solver():
         self._step_methods = self._fetch_step_methods()
                     
     def step(self, vec, *args):
+        ''' The method to be called every iteration by the numerical solver '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
         ret_dct = self.npsolve_ret_dct
