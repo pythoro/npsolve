@@ -110,3 +110,28 @@ class Test_Solver(unittest.TestCase):
         
         lst = s._fetch_step_methods()
         self.assertEqual(lst, [step_a, step_b])
+
+    def test_step(self):
+        s = S()
+        
+        def step(state_dct):
+            return {'a': state_dct['a'] * 2}
+        
+        s._step_methods = [step]
+        
+        state = np.array([1.1])
+        ret = np.zeros(1)
+        a_arr = state[0:1]
+        a_arr.flags['WRITEABLE'] = False
+        state_dct = {'a': a_arr}
+        ret_dct = {'a': ret[0:1]}
+        s.npsolve_state = state
+        s.npsolve_ret = ret
+        s.npsolve_state_dct = state_dct
+        s.npsolve_ret_dct = ret_dct
+        
+        vec = np.array([3.3])
+        ret_arr = s.step(vec)
+        
+        self.assertEqual(ret_arr, np.array([6.6]))
+        self.assertEqual(s.npsolve_ret, np.array([6.6]))

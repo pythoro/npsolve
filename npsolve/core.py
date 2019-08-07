@@ -123,7 +123,7 @@ class Solver():
             i += n
         state = np.zeros(i)
         for key, slc in slices.items():
-            state[slc] = dct[key]['init']
+            state[slc] = np.atleast_1d(dct[key]['init'])
         ret = np.zeros(i)
         return slices, state, ret
         
