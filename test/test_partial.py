@@ -9,12 +9,12 @@ import unittest
 import numpy as np
 
 from npsolve.core import sb, EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, \
-    Partial
+    GET_PARTIALS, Partial
 from npsolve.cache import multi_cached, mono_cached
 
 def make_signals():
     sb.get_active().clear()
-    s_names = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS]
+    s_names = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS]
     signals = {name: sb.get(name) for name in s_names}
     return signals
 
@@ -118,12 +118,18 @@ class Test_Partial(unittest.TestCase):
         p, state, ret, state_dct, ret_dct = make_partial()
         lst = sb.get(GET_STEP_METHODS).fetch_all()
         self.assertEqual(lst[0], p.step)
+
+    def test_fetch_partials(self):
+        p, state, ret, state_dct, ret_dct = make_partial()
+        lst = sb.get(GET_PARTIALS).fetch_all()
+        self.assertEqual(lst[0], p)
         
     def test_step(self):
         p, state, ret, state_dct, ret_dct = make_partial()
         a = state_dct['a']
         a_ret = p.step(state_dct)
         self.assertEqual(a_ret, {'a': a*2})
+        
         
                 
 class Test_Partial_Mono_Caching(unittest.TestCase):

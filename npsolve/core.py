@@ -13,6 +13,7 @@ sb = fw.SignalBox()
 EMIT_VECTORS = 'EMIT_VECTORS'
 GET_VARS = 'GET_VARS'
 GET_STEP_METHODS = 'GET_STEP_METHODS'
+GET_PARTIALS = 'GET_PARTIALS'
 
 class Partial():
     ''' A base class responsible for a set of variables 
@@ -29,8 +30,12 @@ class Partial():
             sb.get(EMIT_VECTORS, must_exist=True).connect(self.set_vectors)
             sb.get(GET_VARS, must_exist=True).connect(self._get_vars)
             sb.get(GET_STEP_METHODS, must_exist=True).connect(self._get_step_methods)
+            sb.get(GET_PARTIALS, must_exist=True).connect(self._get_self)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
+    
+    def _get_self(self):
+        return self
     
     def set_vectors(self, state_dct, ret_dct):
         ''' Override to set up views of the state vector '''
@@ -102,7 +107,7 @@ class Solver():
         
     def _setup_signals(self):
         ''' Setup the signals that Partial instances will require '''
-        signals = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS]
+        signals = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS]
         self._signals = {name: sb.get(name) for name in signals}
     
     def _setup_vecs(self, dct):
@@ -167,6 +172,17 @@ class Solver():
             else:
                 out.append(ret)
         return out
+
+    def fetch_partials(self):
+        lst = self._signals[GET_PARTIALS].fetch_all()
+        dct = {}
+        for partial in lst:
+            try:
+                name = str(partial.npsolve_name)
+            except AttributeError:
+                name = str(partial)
+            dct[name] = partial
+        return dct
 
     def npsolve_init(self):
         ''' Initialise the Partials and be ready to solve '''

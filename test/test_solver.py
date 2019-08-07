@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 
 from npsolve.core import sb, EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, \
-    Solver
+    GET_PARTIALS, Solver
 
 
 
@@ -110,6 +110,27 @@ class Test_Solver(unittest.TestCase):
         
         lst = s._fetch_step_methods()
         self.assertEqual(lst, [step_a, step_b])
+
+    def test_fetch_partials(self):
+        s = S()
+        
+        class Dummy():
+            npsolve_name = 'dummy'
+            def _get_self(self):
+                return self
+
+        class Mock():
+            npsolve_name = 'mock'
+            def _get_self(self):
+                return self
+        
+        d = Dummy()
+        m = Mock()
+        s._signals[GET_PARTIALS].connect(d._get_self)
+        s._signals[GET_PARTIALS].connect(m._get_self)
+                
+        dct = s.fetch_partials()
+        self.assertEqual(dct, {'dummy': d, 'mock': m})
 
     def test_step(self):
         s = S()
