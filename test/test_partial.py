@@ -258,3 +258,13 @@ class Test_Partial_Multi_Caching(unittest.TestCase):
         ret_2 = p.multi_b(5.5)
         self.assertEqual(len(p.multi.__closure__[0].cell_contents), 1)
         self.assertEqual(len(p.multi_b.__closure__[0].cell_contents), 1)
+        
+    def test_cache_clear(self):
+        signals = make_signals()
+        p = Cached()
+        p.multi.cache_enable()
+        p.multi.cache_clear()
+        ret_1 = p.multi(65.1)
+        self.assertEqual(len(p.multi.__closure__[0].cell_contents), 1)
+        p.cache_clear()
+        self.assertEqual(len(p.multi.__closure__[0].cell_contents), 0)
