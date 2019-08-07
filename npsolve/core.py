@@ -203,11 +203,8 @@ class Solver():
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
         ret_dct = self.npsolve_ret_dct
-        dct = {}
-        dct_update = dct.update
         for step in self._step_methods:
-            dct_update(step(state_dct, *args))
-        for name, val in dct.items():
-            ret_dct[name][:] = val
+            for name, val in step(state_dct, *args).items():
+                ret_dct[name][:] = val
         return self.npsolve_ret
         
