@@ -17,13 +17,22 @@ class Partial_1(Partial):
     
     def __init__(self):
         super().__init__()
-        self.add_var('a', 1.0)
+        self.add_var('a', np.linspace(0, 3, 3))
+        self.add_var('b', np.linspace(3, 6, 3))
+        self.add_var('c', np.linspace(6, 9, 3))
+        self.add_var('d', np.linspace(9, 12, 3))
     
     def set_vectors(self, state_dct, ret_dct):
         self.a = state_dct['a']
+        self.b = state_dct['b']
+        self.c = state_dct['c']
+        self.d = state_dct['d']
     
     def step(self, state_dct, *args):
-        return {'a': self.a + 1.0}
+        return {'a': self.a + 1.0,
+                'b': self.b + 1.0,
+                'c': self.c + 1.0,
+                'd': self.d + 1.0}
         
 
 class Test_Solver(unittest.TestCase):
@@ -48,11 +57,12 @@ class Test_Solver(unittest.TestCase):
                              number=100000)
         
         ret = vec
-        def internal(a):
-            return a + 1.0
         
         def step_baseline(vec, ret):
-            ret[0] = internal(vec[0])
+            ret[0:3] = vec[0:3] + 1.0
+            ret[3:6] = vec[3:6] + 1.0
+            ret[6:9] = vec[6:9] + 1.0
+            ret[9:12] = vec[9:12] + 1.0
             return ret
             
         globals_dct = {'step_baseline': step_baseline, 'vec': vec, 'ret': ret}
@@ -61,7 +71,7 @@ class Test_Solver(unittest.TestCase):
                                  number=100000)
         print()
         print('Relative speed: ' + '{:0.3f}'.format(time/baseline))
-        self.assertLess(time, baseline*8)
+        self.assertLess(time, baseline*1.15)
         
         
         
