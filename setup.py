@@ -23,7 +23,7 @@ setuptools.setup(
     url="https://github.com/pythoro/npsolve.git",
     download_url="https://github.com/pythoro/npsolve/archive/v0.0.1.zip",
     packages=['npsolve'],
-    keywords=['NUMERICAL SOLVER', 'NUMPY', 'SCIPY'],
+    keywords=['NUMERICAL SOLVER', 'NUMPY', 'SCIPY', 'ODE', 'INTEGRATION'],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
