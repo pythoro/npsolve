@@ -51,6 +51,7 @@ class Cached(P):
 def make_partial(cls=P):
     signals = make_signals()
     p = cls()
+    p.connect()
     state = np.array([1.3, 5.6])
     ret = np.zeros(2)
     a_arr = state[0:1]
@@ -67,10 +68,11 @@ def make_partial(cls=P):
 
 class Test_Partial(unittest.TestCase):
 
-    def test_create_before_solver(self):
+    def test_connect_before_solver(self):
         def test_fun():
             sb.get_active().clear()
             p = Partial()    
+            p.connect()
         self.assertRaises(KeyError, test_fun)
         
     def test_create(self):
@@ -89,6 +91,7 @@ class Test_Partial(unittest.TestCase):
     def test_get_init(self):
         signals = make_signals()
         p = P()
+        p.connect()
         dicts = signals[GET_VARS].fetch_all()
         dct = {'a': {'init': np.array([0.7])},
                'b': {'init': np.array([5.0])}}

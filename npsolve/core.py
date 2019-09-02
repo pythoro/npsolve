@@ -8,6 +8,8 @@ Created on Mon Aug  5 14:34:54 2019
 import numpy as np
 import fastwire as fw
 
+from . import settings
+
 sb = fw.SignalBox()
 
 EMIT_VECTORS = 'EMIT_VECTORS'
@@ -26,6 +28,10 @@ class Partial():
     def __init__(self):
         self.npsolve_vars = {}
         self.__cache_clear_functions = self._get_cache_clear_functions()
+        if settings.AUTO_CONNECT:
+            self.connect()
+        
+    def connect(self):
         try:
             sb.get(EMIT_VECTORS, must_exist=True).connect(self.set_vectors)
             sb.get(GET_VARS, must_exist=True).connect(self._get_vars)
@@ -101,12 +107,13 @@ class Partial():
 class Solver():
     
     def __init__(self):
-        self._container_id = sb.add(remove_with=self)
-        self._setup_signals()
         self._cache_clear_functions = []
+        if settings.AUTO_CONNECT:
+            self.setup_signals()
         
-    def _setup_signals(self):
+    def setup_signals(self):
         ''' Setup the signals that Partial instances will require '''
+        self._container_id = sb.add(remove_with=self)
         signals = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS]
         self._signals = {name: sb.get(name) for name in signals}
     

@@ -126,7 +126,15 @@ def run():
     s = Solver()
     c1 = Component1()
     c2 = Component2()
+	
+	# Now we connect the components
+    s.setup_signals() # Always call this before calling connect on the Partial classes.
+    c1.connect()
+    c2.connect()
+	
+	# Get the solver ready
     s.npsolve_init()
+	
     # Now we can run!
     res = s.solve()
     return res, s

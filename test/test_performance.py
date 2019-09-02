@@ -41,6 +41,8 @@ class Test_Solver(unittest.TestCase):
     def test_create(self):
         s = Solver()
         p = Partial_1()
+        s.setup_signals()
+        p.connect()
         s.npsolve_init()
         lst = s.fetch_partials()
         self.assertEqual(lst['partial_1'], p)
@@ -48,7 +50,8 @@ class Test_Solver(unittest.TestCase):
     def test_step(self):
         s = Solver()
         p = Partial_1()
-        
+        s.setup_signals()
+        p.connect()
         s.npsolve_init()
         vec = s.npsolve_state
         globals_dct = {'s': s, 'vec': vec}

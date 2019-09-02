@@ -44,6 +44,7 @@ class Test_Solver(unittest.TestCase):
         
     def test_fetch_vars(self):
         s = S()
+        s.setup_signals()
         
         def get_init_a():
             return {'a': {'init': np.array([1.1])},
@@ -64,6 +65,7 @@ class Test_Solver(unittest.TestCase):
 
     def test_emit_vectors(self):
         s = S()
+        s.setup_signals()
         state = np.array([1.1, 2.2, 3.3, 4.4])
         ret = np.zeros(4)
         a_arr = state[0:1]
@@ -92,6 +94,7 @@ class Test_Solver(unittest.TestCase):
 
     def test_fetch_step_methods(self):
         s = S()
+        s.setup_signals()
         
         def step_a():
             pass
@@ -113,6 +116,7 @@ class Test_Solver(unittest.TestCase):
 
     def test_fetch_partials(self):
         s = S()
+        s.setup_signals()
         
         class Dummy():
             npsolve_name = 'dummy'
@@ -134,6 +138,7 @@ class Test_Solver(unittest.TestCase):
 
     def test_step(self):
         s = S()
+        s.setup_signals()
         
         def step(state_dct):
             return {'a': state_dct['a'] * 2}
