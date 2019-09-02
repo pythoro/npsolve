@@ -141,7 +141,7 @@ class Solver():
             state_view.flags['WRITEABLE'] = False
             state_dct[name] = state_view
 
-            ret_view = state[slc]
+            ret_view = ret[slc]
             ret_dct[name] = ret_view
         return state_dct, ret_dct
     
@@ -192,6 +192,7 @@ class Solver():
         state_dct, ret_dct = self._make_dcts(slices, state, ret)
         self.npsolve_slices = slices
         self.npsolve_state = state
+        self.npsolve_initial_values = state.copy()
         self.npsolve_ret = ret
         self.npsolve_state_dct = state_dct
         self.npsolve_ret_dct = ret_dct
