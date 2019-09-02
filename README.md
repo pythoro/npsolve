@@ -17,13 +17,13 @@ import npsolve
 
 class Component1(npsolve.Partial):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Don't forget to call this!
         self.add_var('position', init=0.1)
         self.add_var('velocity', init=0.3)
     
 class Component2(npsolve.Partial):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Don't forget to call this!
         self.add_var('force', init=-0.1)
 
 ```
@@ -35,7 +35,7 @@ Next override the *set_vectors* method to store views you might want. In this ca
 
 class Component1(npsolve.Partial):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Don't forget to call this!
         self.add_var('position', init=0.1)
         self.add_var('velocity', init=0.3)
     
@@ -48,7 +48,7 @@ class Component1(npsolve.Partial):
 
 class Component2(npsolve.Partial):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Don't forget to call this!
         self.add_var('force', init=-0.1)
 
 ```
@@ -61,7 +61,7 @@ Then, we'll tell them how to do the calculations. The *step* method is called au
 
 class Component1(npsolve.Partial):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Don't forget to call this!
         self.add_var('position', init=0.1)
         self.add_var('velocity', init=0.3)
     
@@ -83,7 +83,7 @@ class Component1(npsolve.Partial):
 
 class Component2(npsolve.Partial):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Don't forget to call this!
         self.add_var('force', init=-0.1)
 
     def calculate(self, state_dct, t):
