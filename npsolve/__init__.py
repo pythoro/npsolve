@@ -7,3 +7,4 @@ Created on Mon Aug  5 20:46:26 2019
 
 from . import settings
 from .core import Partial, Solver
+from .cache import multi_cached, mono_cached

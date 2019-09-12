@@ -197,6 +197,7 @@ class Solver():
         dct = self._fetch_vars()
         slices, state, ret = self._setup_vecs(dct)
         state_dct, ret_dct = self._make_dcts(slices, state, ret)
+        self.npsolve_variables = dct
         self.npsolve_slices = slices
         self.npsolve_state = state
         self.npsolve_initial_values = state.copy()
@@ -206,13 +207,29 @@ class Solver():
         self._emit_vectors()
         self._step_methods = self._fetch_step_methods()
                     
-    def step(self, vec, *args):
+    def step(self, vec, *args, **kwargs):
         ''' The method to be called every iteration by the numerical solver '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
         ret_dct = self.npsolve_ret_dct
         for step in self._step_methods:
-            for name, val in step(state_dct, *args).items():
+            for name, val in step(state_dct, *args, **kwargs).items():
+                ret_dct[name][:] = val
+        return self.npsolve_ret
+
+    def tstep(self, t, vec, *args, **kwargs):
+        ''' The method to be called every iteration by the numerical solver '''
+        self.npsolve_state[:] = vec
+        state_dct = self.npsolve_state_dct
+        ret_dct = self.npsolve_ret_dct
+        for step in self._step_methods:
+            for name, val in step(state_dct, t, *args, **kwargs).items():
                 ret_dct[name][:] = val
         return self.npsolve_ret
         
+    def as_dct(self, sol):
+        ''' Split out solution array into dictionary of values '''
+        d = {}
+        for key, slc in self.npsolve_slices.items():
+            d[key] = sol[:,slc]
+        return d
