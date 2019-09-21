@@ -21,6 +21,7 @@ GET_VARS = 'GET_VARS'
 GET_STEP_METHODS = 'GET_STEP_METHODS'
 GET_PARTIALS = 'GET_PARTIALS'
 SET_CACHING = 'SET_CACHING'
+GET_CACHE_CLEARS = 'GET_CACHE_CLEARS'
 
 class Partial():
     ''' A base class responsible for a set of variables 
@@ -51,6 +52,8 @@ class Partial():
             c.get(GET_STEP_METHODS, must_exist=True).connect(self._get_step_methods)
             c.get(GET_PARTIALS, must_exist=True).connect(self._get_self)
             c.get(SET_CACHING, must_exist=True).connect(self._set_caching)
+            c.get(GET_CACHE_CLEARS,
+                  must_exist=True).connect(self._get_cache_clear_functions)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
     
@@ -154,7 +157,7 @@ class Solver():
         '''
         self._container = sb.add(activate=True, remove_with=self)
         signals = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS,
-                   SET_CACHING]
+                   SET_CACHING, GET_CACHE_CLEARS]
         self._signals = {name: sb.get(name) for name in signals}
         return self._container.id
     
@@ -233,6 +236,13 @@ class Solver():
             dct[name] = partial
         return dct
 
+    def _fetch_cache_clears(self):
+        lst = self._signals[GET_CACHE_CLEARS].fetch_all()
+        out = []
+        for l in lst:
+            out.extend(l)
+        return out
+
     def npsolve_init(self):
         ''' Initialise the Partials and be ready to solve '''
         dct = self._fetch_vars()
@@ -247,6 +257,7 @@ class Solver():
         self.npsolve_ret_dct = ret_dct
         self._emit_vectors()
         self._step_methods = self._fetch_step_methods()
+        self._cache_clear_functions = self._fetch_cache_clears()
         self._signals[SET_CACHING].emit(enable=True)
                     
     def step(self, vec, *args, **kwargs):
@@ -254,6 +265,8 @@ class Solver():
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
         ret_dct = self.npsolve_ret_dct
+        for f in self._cache_clear_functions:
+            f()
         for step in self._step_methods:
             for name, val in step(state_dct, *args, **kwargs).items():
                 ret_dct[name][:] = val
@@ -264,6 +277,8 @@ class Solver():
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
         ret_dct = self.npsolve_ret_dct
+        for f in self._cache_clear_functions:
+            f()
         for step in self._step_methods:
             for name, val in step(state_dct, t, *args, **kwargs).items():
                 ret_dct[name][:] = val

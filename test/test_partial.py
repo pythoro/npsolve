@@ -9,13 +9,13 @@ import unittest
 import numpy as np
 
 from npsolve.core import sb, EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, \
-    GET_PARTIALS, SET_CACHING, Partial
+    GET_PARTIALS, SET_CACHING, GET_CACHE_CLEARS, Partial
 from npsolve.cache import multi_cached, mono_cached
 
 def make_signals():
     sb.get_active().clear()
     s_names = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS,
-               SET_CACHING]
+               SET_CACHING, GET_CACHE_CLEARS]
     signals = {name: sb.get(name) for name in s_names}
     return signals
 

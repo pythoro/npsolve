@@ -54,6 +54,7 @@ def multi_cached():
         wrapper.cache_clear = cache.clear
         wrapper.cache_enable = cache_enable
         wrapper.cache_disable = cache_disable
+        wrapper.set_caching = set_caching
         wrapper.cacheable = True
         return wrapper
     return decorator
@@ -99,6 +100,7 @@ def mono_cached():
         wrapper.cache_clear = cache_reset
         wrapper.cache_enable = cache_enable
         wrapper.cache_disable = cache_disable
+        wrapper.set_caching = set_caching
         wrapper.cacheable = True
         return wrapper
     return decorator
