@@ -3,6 +3,10 @@
 Created on Mon Aug  5 14:34:54 2019
 
 @author: Reuben
+
+Npsolve has a simple, small core built on fastwire. It's designed to give
+good flexibility without compromising on performance.
+
 """
 
 import numpy as np
@@ -16,6 +20,7 @@ EMIT_VECTORS = 'EMIT_VECTORS'
 GET_VARS = 'GET_VARS'
 GET_STEP_METHODS = 'GET_STEP_METHODS'
 GET_PARTIALS = 'GET_PARTIALS'
+SET_CACHING = 'SET_CACHING'
 
 class Partial():
     ''' A base class responsible for a set of variables 
@@ -27,16 +32,25 @@ class Partial():
     
     def __init__(self):
         self.npsolve_vars = {}
+        self.__cache_methods = self._get_cached_methods()
         self.__cache_clear_functions = self._get_cache_clear_functions()
         if settings.AUTO_CONNECT:
             self.connect()
         
-    def connect(self):
+    def connect(self, cid=None):
+        ''' Connect this instance to the Solver instance
+        
+        Args:
+            cid (int): The container id provided the setup_signals method
+            of the Solver instance.
+        '''
         try:
-            sb.get(EMIT_VECTORS, must_exist=True).connect(self.set_vectors)
-            sb.get(GET_VARS, must_exist=True).connect(self._get_vars)
-            sb.get(GET_STEP_METHODS, must_exist=True).connect(self._get_step_methods)
-            sb.get(GET_PARTIALS, must_exist=True).connect(self._get_self)
+            c = sb.get_container(cid)
+            c.get(EMIT_VECTORS, must_exist=True).connect(self.set_vectors)
+            c.get(GET_VARS, must_exist=True).connect(self._get_vars)
+            c.get(GET_STEP_METHODS, must_exist=True).connect(self._get_step_methods)
+            c.get(GET_PARTIALS, must_exist=True).connect(self._get_self)
+            c.get(SET_CACHING, must_exist=True).connect(self._set_caching)
         except KeyError:
             raise KeyError('Solver must be created before Partial instance.')
     
@@ -44,7 +58,14 @@ class Partial():
         return self
     
     def set_vectors(self, state_dct, ret_dct):
-        ''' Override to set up views of the state vector '''
+        ''' Override to set up views of the state vector 
+        
+        Args:
+            state_dct (dict): A dictionary of numpy array views for the state
+            of all variables. Provided by the Solver.
+            ret_dct (dict): A similar dictionary of return values. Not
+            usually used.
+        '''
         pass
     
     def _get_vars(self):
@@ -83,18 +104,28 @@ class Partial():
         self.set_init(name, init)
         self.set_meta(name, **kwargs)
         
-    def _get_cache_clear_functions(self):
+    def add_vars(self, dct):
+        for name, d in dct.items():
+            self.add_var(name, **d)
+    
+    def _get_cached_methods(self):
         functions = []
         for name in dir(self):
             if name.startswith('__') and name.endswith('__'):
                 continue
             func = getattr(self, name, None)
             if hasattr(func, 'cacheable'):
-                functions.append(func.cache_clear)
+                functions.append(func)
         return functions
+    
+    def _get_cache_clear_functions(self):
+        return [func.cache_clear for func in self.__cache_methods]
     
     def cache_clear(self):
         [f() for f in self.__cache_clear_functions]
+    
+    def _set_caching(self, enable):
+        [f.set_caching(enable) for f in self.__cache_methods]
     
     def _get_step_methods(self):
         return self.step
@@ -102,9 +133,13 @@ class Partial():
     def step(self, state_dct, *args):
         self.cache_clear()
         # return dict with key and return values.
+        
+    def enable_caching(self):
+        [f.cache_enable() for f in self._get_cached_methods()]
 
 
 class Solver():
+    ''' The solver that pulls together the partials and allows solving '''
     
     def __init__(self):
         self._cache_clear_functions = []
@@ -112,10 +147,16 @@ class Solver():
             self.setup_signals()
         
     def setup_signals(self):
-        ''' Setup the signals that Partial instances will require '''
-        self._container_id = sb.add(remove_with=self)
-        signals = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS]
+        ''' Setup the fastwire signals that Partial instances will require 
+        
+        Returns:
+            int: The container id for the signals.
+        '''
+        self._container = sb.add(activate=True, remove_with=self)
+        signals = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS,
+                   SET_CACHING]
         self._signals = {name: sb.get(name) for name in signals}
+        return self._container.id
     
     def _setup_vecs(self, dct):
         ''' Create vectors and slices based on a dictionary of variables 
@@ -206,6 +247,7 @@ class Solver():
         self.npsolve_ret_dct = ret_dct
         self._emit_vectors()
         self._step_methods = self._fetch_step_methods()
+        self._signals[SET_CACHING].emit(enable=True)
                     
     def step(self, vec, *args, **kwargs):
         ''' The method to be called every iteration by the numerical solver '''

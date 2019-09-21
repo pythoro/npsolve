@@ -4,13 +4,18 @@ Created on Wed Aug  7 07:06:54 2019
 
 @author: Reuben
 
-Simple caching inspired by functools.lru_cache
+Simple caching inspired by functools.lru_cache.
+
+Sometimes, Partial instances may need to call each other (via a fastwire fetch
+is a good method). Caching allows a way to reuse the computations for each step
+if needed, to avoid having to double-up in those cases.
 
 """
 
 import functools
 
 def multi_cached():
+    ''' A cache method that considers arguments '''
     def decorator(user_function):
         # Needs to be inside a decorating function
         sentinel = object()                 # unique object used to signal cache misses
@@ -39,6 +44,12 @@ def multi_cached():
             nonlocal cache_enabled
             cache_enabled = False
             cache.clear()
+            
+        def set_caching(enable):
+            if enable == True:
+                cache_enable()
+            else:
+                cache_disable()
         
         wrapper.cache_clear = cache.clear
         wrapper.cache_enable = cache_enable
@@ -49,6 +60,7 @@ def multi_cached():
 
 
 def mono_cached():
+    ''' A simpler cache that does not consider arguments '''
     def decorator(user_function):
         # make inside a decorating function
         cache_enabled = False
@@ -73,6 +85,12 @@ def mono_cached():
             nonlocal cache_enabled, cache_valid
             cache_enabled = False
             cache_valid = False
+            
+        def set_caching(enable):
+            if enable == True:
+                cache_enable()
+            else:
+                cache_disable()
             
         def cache_reset():
             nonlocal cache_valid

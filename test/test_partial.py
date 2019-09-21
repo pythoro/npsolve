@@ -9,12 +9,13 @@ import unittest
 import numpy as np
 
 from npsolve.core import sb, EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, \
-    GET_PARTIALS, Partial
+    GET_PARTIALS, SET_CACHING, Partial
 from npsolve.cache import multi_cached, mono_cached
 
 def make_signals():
     sb.get_active().clear()
-    s_names = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS]
+    s_names = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS,
+               SET_CACHING]
     signals = {name: sb.get(name) for name in s_names}
     return signals
 
@@ -203,6 +204,22 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
         for f in lst:
             self.assertEqual(callable(f), True)
                 
+    def test_get_cached_methods(self):
+        signals = make_signals()
+        p = Cached()
+        lst = p._get_cached_methods()
+        self.assertEqual(len(lst), 4)
+        for f in lst:
+            self.assertEqual(callable(f), True)
+
+    def test_set_caching(self):
+        signals = make_signals()
+        p = Cached()
+        signals[SET_CACHING].emit(enable=True)
+        ret = p.mono(5)
+        ret2 = p.mono(5)
+        self.assertEqual(ret, ret2)
+            
 
 class Test_Partial_Multi_Caching(unittest.TestCase):
 
