@@ -11,6 +11,7 @@ good flexibility without compromising on performance.
 
 import numpy as np
 import fastwire as fw
+import traceback
 
 from . import settings
 
@@ -35,6 +36,7 @@ class Partial():
         self.npsolve_vars = {}
         self.__cache_methods = self._get_cached_methods()
         self.__cache_clear_functions = self._get_cache_clear_functions()
+        self.cache_clear() # Useful for iPython console autoreload.
         if settings.AUTO_CONNECT:
             self.connect()
         
@@ -134,7 +136,7 @@ class Partial():
         return self.step
     
     def step(self, state_dct, *args):
-        self.cache_clear()
+        raise NotImplementedError('The step method must be implemented.')
         # return dict with key and return values.
         
     def enable_caching(self):
@@ -280,7 +282,15 @@ class Solver():
         for f in self._cache_clear_functions:
             f()
         for step in self._step_methods:
-            for name, val in step(state_dct, t, *args, **kwargs).items():
+            try:
+                ret = step(state_dct, t, *args, **kwargs)
+            except TypeError as e:
+                traceback.print_exc()
+                raise TypeError('Error from ' + str(step) + ': ' + e.args[0])
+            if not isinstance(ret, dict):
+                raise ValueError(str(step) + ' did not return a dictionary of '
+                                 + 'derivatives.')
+            for name, val in ret.items():
                 ret_dct[name][:] = val
         return self.npsolve_ret
         
