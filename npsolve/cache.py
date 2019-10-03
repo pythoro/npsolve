@@ -61,21 +61,32 @@ def multi_cached():
 
 
 def mono_cached():
-    ''' A simpler cache that does not consider arguments '''
+    ''' A cache method that only considers the 'self' argument 
+    
+    This works very similar to multi-cache but doesn't use the make_key 
+    function from functools to save a little bit of time.
+    '''
     def decorator(user_function):
-        # make inside a decorating function
+        # Needs to be inside a decorating function
+        sentinel = object()                 # unique object used to signal cache misses
+        sentinel_hash = hash(sentinel)
         cache_enabled = False
-        cache = None
-        cache_valid = False
-        
-        @functools.wraps(user_function)
+        cache = {}
+        cache_get = cache.get    # bound method to lookup a key or return None
+
+        @functools.wraps(user_function)        
         def wrapper(*args, **kwds):
-            nonlocal cache, cache_valid
-            if cache_enabled and cache_valid:
-                return cache
+            if not cache_enabled:
+                return user_function(*args, **kwds)
+            if len(args) == 0:
+                key = sentinel_hash
+            else:
+                key = hash(args[0])
+            result = cache_get(key, sentinel)
+            if result is not sentinel:
+                return result
             result = user_function(*args, **kwds)
-            cache = result
-            cache_valid = True
+            cache[key] = result
             return result
     
         def cache_enable():
@@ -83,21 +94,17 @@ def mono_cached():
             cache_enabled = True
     
         def cache_disable():
-            nonlocal cache_enabled, cache_valid
+            nonlocal cache_enabled
             cache_enabled = False
-            cache_valid = False
+            cache.clear()
             
         def set_caching(enable):
             if enable == True:
                 cache_enable()
             else:
                 cache_disable()
-            
-        def cache_reset():
-            nonlocal cache_valid
-            cache_valid = False
         
-        wrapper.cache_clear = cache_reset
+        wrapper.cache_clear = cache.clear
         wrapper.cache_enable = cache_enable
         wrapper.cache_disable = cache_disable
         wrapper.set_caching = set_caching
