@@ -222,6 +222,22 @@ class Solver():
                 state_dct=self.npsolve_state_dct,
                 ret_dct=self.npsolve_ret_dct)
 
+    def freeze(self):
+        ''' Give static copies of vectors to connected Partial instances '''
+        state_dct, ret_dct = self._make_dcts(self.npsolve_slices,
+                                             self.npsolve_state.copy(),
+                                             self.npsolve_ret.copy())
+        self._signals[EMIT_VECTORS].emit(
+                state_dct=state_dct,
+                ret_dct=ret_dct)
+        return self.npsolve_state.copy()
+        
+    def unfreeze(self, state=None):
+        ''' Give 'live' vectors to connected Partial instances '''
+        if state is not None:
+            self.npsolve_state[:] = state
+        self._emit_vectors()
+
     def _fetch_step_methods(self):
         lst = self._signals[GET_STEP_METHODS].fetch_all()
         out = []
