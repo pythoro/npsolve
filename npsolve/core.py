@@ -163,6 +163,12 @@ class Solver():
         self._signals = {name: sb.get(name) for name in signals}
         return self._container.id
     
+    def close_signals(self):
+        sb.deactivate(self._container.id)
+        
+    def remove_signals(self):
+        sb.remove(self._container.id)
+    
     def _setup_vecs(self, dct):
         ''' Create vectors and slices based on a dictionary of variables 
         
