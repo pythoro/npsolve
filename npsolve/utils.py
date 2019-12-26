@@ -9,10 +9,14 @@ This module is about logging extra variables during solving.
 The recommended way is to use a List_Container.
 
 """
+from collections import defaultdict
+
+def none():
+    return None
 
 class Dict_Container(dict):
     def __missing__(self, key):
-        self[key] = {}
+        self[key] = defaultdict(none)
         return self[key]
 
 class List_Container(dict):
