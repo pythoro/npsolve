@@ -263,6 +263,7 @@ class Solver():
         self.npsolve_ret = ret
         self.npsolve_state_dct = state_dct
         self.npsolve_ret_dct = ret_dct
+        self.npsolve_isolate = None
         self._emit_vectors()
         self._step_methods = self._fetch_step_methods()
         self._cache_clear_functions = self._fetch_cache_clears()
@@ -277,7 +278,11 @@ class Solver():
             f()
         for step in self._step_methods:
             for name, val in step(state_dct, *args, **kwargs).items():
-                ret_dct[name][:] = val
+                if self.npsolve_isolate is None:
+                    ret_dct[name][:] = val
+                else:
+                    if name in self.npsolve_isolate:
+                        ret_dct[name][:] = val
         return self.npsolve_ret
 
     def tstep(self, t, vec, *args, **kwargs):
@@ -297,7 +302,11 @@ class Solver():
                 raise ValueError(str(step) + ' did not return a dictionary of '
                                  + 'derivatives.')
             for name, val in ret.items():
-                ret_dct[name][:] = val
+                if self.npsolve_isolate is None:
+                    ret_dct[name][:] = val
+                else:
+                    if name in self.npsolve_isolate:
+                        ret_dct[name][:] = val
         return self.npsolve_ret
         
     def as_dct(self, sol):
