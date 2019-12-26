@@ -268,6 +268,19 @@ class Solver():
         self._step_methods = self._fetch_step_methods()
         self._cache_clear_functions = self._fetch_cache_clears()
         self._signals[SET_CACHING].emit(enable=True)
+
+    def one_way_step(self, vec, *args, **kwargs):
+        ''' Method to be called every iteration with no return val 
+        
+        Note: This method relies on other methods being used to inform the
+        solver during its iteration.
+        '''
+        self.npsolve_state[:] = vec
+        state_dct = self.npsolve_state_dct
+        for f in self._cache_clear_functions:
+            f()
+        for step in self._step_methods:
+            step(state_dct, *args, **kwargs)
                     
     def step(self, vec, *args, **kwargs):
         ''' The method to be called every iteration by the numerical solver '''
