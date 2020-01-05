@@ -26,7 +26,6 @@ class P(Partial):
         self.add_var('b', init=5.0)
         
     def step(self, state_dct, *args):
-        super().step(state_dct, *args)
         a = state_dct['a']
         return {'a': a*2}
         
