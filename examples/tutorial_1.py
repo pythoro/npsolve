@@ -56,23 +56,46 @@ class Solver(npsolve.Solver):
         result = odeint(self.step, self.npsolve_initial_values, self.t_vec)
         return result
     
+    def set_model(self, model):
+        self.model = model
+        self.connect(model)
+		
+    def connect(self, model):
+        self.remove_signals()
+        self.setup_signals()
+        for k, e in model.elements.items():
+            e.connect()
+        self.close_signals()
     
+    
+class Model():
+    def __init__(self):
+        self.elements = {}
+		
+    def add_element(self, key, element):
+        self.elements[key] = element
+    
+    
+def make_model():
+    m = Model()
+    m.add_element('component 1', Component1())
+    m.add_element('component 2', Component2())
+    return m
+    
+def make_solver():
+    return Solver()
+
 def run():
-    s = Solver()
-    c1 = Component1()
-    c2 = Component2()
-    
-    # Now we connect the components
-    s.setup_signals() # Always call this before calling connect on the Partial classes.
-    c1.connect()
-    c2.connect()
-    
-    # Get the solver ready
-    s.npsolve_init()
-    
+    solver = make_solver()
+    model = make_model()
+    solver.set_model(model)
+
+    # Initialise the solver
+    solver.npsolve_init()
+	
     # Now we can run!
-    res = s.solve()
-    return res, s
+    res = solver.solve()
+    return res, solver
 
 import matplotlib.pyplot as plt
 

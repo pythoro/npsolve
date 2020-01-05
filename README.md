@@ -7,7 +7,6 @@ The *npsolve* package is a small, simple package built on *numpy* and *fastwire*
 
 ## Basic usage tutorial
 
-
 First, setup some classes that you want to do calculations with. We do this by using the *add_var* method to setup variables and their initial values.
 
 ```python
@@ -55,7 +54,7 @@ class Component2(npsolve.Partial):
 
 Note that variables are made available to all Partial instances automatically.
 
-Then, we'll tell them how to do the calculations. The *step* method is called automatically and expects a dictionary of return values (e.g. derivatives). A dictionary of the current state values is provided (again), but we're going to use the views we set in the *set_vectors* method.
+Then, we'll tell them how to do the calculations. The *step* method is called automatically and expects a dictionary of return values (e.g. derivatives). We'll use that one here. A dictionary of the current state values is provided (again), but we're going to use the views we set in the *set_vectors* method.
 
 ```python
 
@@ -102,7 +101,21 @@ class Component2(npsolve.Partial):
 		
 ```
 
-Now, we'll set up the solver. By default, Solvers have a *step* method that's ready to use, and after initialisation, the initial values set by the Partial classes are captured in the *npsolve_initial_values* attribute. By default, the Solver's *step* method returns a vector of all the return values, the same size as the Solver's npsolve_initial_values array.
+
+Now let's make a simple model that gathers together our Partials. 
+
+```python
+
+class Model():
+    def __init__(self):
+        self.elements = {}
+		
+    def add_element(self, key, element):
+        self.elements[key] = element
+
+```
+
+Now, we'll set up the solver. For this example, we'll use the odeint solver from Scipy. Here's what it looks like:
 
 
 ```python
@@ -114,30 +127,57 @@ class Solver(npsolve.Solver):
         self.t_vec = np.linspace(0, 5, 1001)
         result = odeint(self.step, self.npsolve_initial_values, self.t_vec)
         return result
+
+	def set_model(self, model):
+		self.model = model
+		self.connect(model)
+		
+    def connect(self, model):
+        self.remove_signals()
+        self.setup_signals()
+        for k, e in model.elements.items():
+            e.connect()
+        self.close_signals()
+
 ```
 
+Let's look at what's going on, starting with the `solve` method. By default, Solvers have a *step* method that's ready to use. (They also have a *one_way_step* method that doesn't expect return values from the Partials, and a *tstep* method that has a time value as the first argument.) After initialisation, the initial values set by the Partial classes are captured in the *npsolve_initial_values* attribute. By default, the Solver's *step* method returns a vector of all the return values, the same size as the Solver's npsolve_initial_values array. So most of the work is done for us here already. Note here that we don't need to know anything about the model or the elements in the model.
+
+
+We'll pass a model into our solver, and we need to connect the model elements to the solver. In the `connect` method above, we're using this typical sequence of calls:
+  * Solver.remove_signals: To clean up any signals from previous `connect` calls
+  * Solver.setup_signals: Create a new set of signals.
+  * Partial.connect: We call `connect` on each partial *after* calling `setup_signals` on the Solver.
+  * Solver.close_signals: Close the signals so they aren't accidentally used by anything else.
+
+This allows us to decouple the model and Partials from the solver. We can pass in different models, or pass models to different solvers. We can make models with different components. It's flexible and easy to maintain!
 
 To run, we just have to instantiate the Solver before the Partials that use it, then call the *npsolve_init* method. It doesn't matter where in the code we create the Solver and Partial instances - they'll link up automatically through *fastwire*.
 
 
 ```python
+    
+def make_model():
+    m = Model()
+    m.add_element('component 1', Component1())
+    m.add_element('component 2', Component2())
+    return m
+	
+
+def make_solver():
+    return Solver()
 
 def run():
-    s = Solver()
-    c1 = Component1()
-    c2 = Component2()
-	
-	# Now we connect the components
-    s.setup_signals() # Always call this before calling connect on the Partial classes.
-    c1.connect()
-    c2.connect()
-	
-	# Get the solver ready
-    s.npsolve_init()
+    solver = make_solver()
+    model = make_model()
+    solver.set_model(model)
+
+    # Initialise the solver
+    solver.npsolve_init()
 	
     # Now we can run!
-    res = s.solve()
-    return res, s
+    res = solver.solve()
+    return res, solver
 
 ```
 
