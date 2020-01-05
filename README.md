@@ -124,13 +124,13 @@ from scipy.integrate import odeint
 
 class Solver(npsolve.Solver):
     def solve(self):
-        self.t_vec = np.linspace(0, 5, 1001)
+        self.t_vec = np.linspace(0, 10, 1001)
         result = odeint(self.step, self.npsolve_initial_values, self.t_vec)
         return result
-
-	def set_model(self, model):
-		self.model = model
-		self.connect(model)
+    
+    def set_model(self, model):
+        self.model = model
+        self.connect(model)
 		
     def connect(self, model):
         self.remove_signals()
