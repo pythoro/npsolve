@@ -111,10 +111,24 @@ class Partial():
         self.set_meta(name, **kwargs)
         
     def add_vars(self, dct):
+        ''' Add multiple variables 
+        
+        Args:
+            dct (dict): A dictionary in which keys are variable names and 
+                values are dictionaries with name, initial value, etc.
+        '''
         for name, d in dct.items():
             self.add_var(name, **d)
     
     def _get_cached_methods(self):
+        ''' Return a list of the cached methods
+        
+        Note:
+            The solver clears the cache for each method with each step.
+        
+        Returns:
+            list: A list of the methods.
+        '''
         functions = []
         for name in dir(self):
             if name.startswith('__') and name.endswith('__'):
@@ -125,15 +139,23 @@ class Partial():
         return functions
     
     def _get_cache_clear_functions(self):
+        ''' Get the cache_clear functions for cached methods 
+        
+        Returns:
+            list: A list of functions
+        '''
         return [func.cache_clear for func in self.__cache_methods]
     
     def cache_clear(self):
+        ''' Clear the cache for all cached methods '''
         [f() for f in self.__cache_clear_functions]
     
     def _set_caching(self, enable):
+        ''' Enable / disable caching in cached methods '''
         [f.set_caching(enable) for f in self.__cache_methods]
     
     def _get_step_methods(self):
+        ''' Return the step method '''
         return self.step
     
     def step(self, state_dct, *args):
@@ -141,6 +163,7 @@ class Partial():
         # return dict with key and return values.
         
     def enable_caching(self):
+        ''' Enable or '''
         [f.cache_enable() for f in self._get_cached_methods()]
 
 
@@ -149,6 +172,8 @@ class Solver():
     
     def __init__(self):
         self._cache_clear_functions = []
+        self.npsolve_isolate = None
+        self._container = None
         if settings.AUTO_CONNECT:
             self.setup_signals()
         
@@ -165,10 +190,23 @@ class Solver():
         return self._container.id
     
     def close_signals(self):
-        sb.deactivate(self._container.id)
+        ''' Deactive the signal container 
+        
+        Note:
+            If autoconnecting is enabled, other Partials may connect to
+            the Solver if the container is active.
+        '''
+        if self._container is not None:
+            sb.deactivate(self._container.id)
         
     def remove_signals(self):
-        sb.remove(self._container.id)
+        ''' Remove the signal container 
+        
+        Note:
+            This helps to keep the signal box tidy.
+        '''
+        if self._container is not None:
+            sb.remove(self._container.id)
     
     def _setup_vecs(self, dct, pinned=None):
         ''' Create vectors and slices based on a dictionary of variables 
@@ -177,6 +215,13 @@ class Solver():
             dct (dict): A dictionary in which keys are variable names and
                 values are dictionaries of attributes, which include an
                 'init' entry for initial value.
+            pinned (dct): A dictionary of variable-values to hold constant.
+            
+        Returns:
+            dict: A dictionary of slices. Each slice corresponds to values
+            for a given variable in the state and return vectors.
+            ndarray: A 1d state vector.
+            ndarray: A 1d vector for return values
         '''
         slices = {}
         pinned = {} if pinned is None else pinned
@@ -234,7 +279,12 @@ class Solver():
                 ret_dct=self.npsolve_ret_dct)
 
     def freeze(self):
-        ''' Give static copies of vectors to connected Partial instances '''
+        ''' Give static copies of vectors to connected Partial instances 
+        
+        Warning:
+            This will prevent the 'step' methods from being able to update
+            the values.
+        '''
         state_dct, ret_dct = self._make_dcts(self.npsolve_slices,
                                              self.npsolve_state.copy(),
                                              self.npsolve_ret.copy())
@@ -244,7 +294,11 @@ class Solver():
         return self.npsolve_state.copy()
         
     def unfreeze(self, state=None):
-        ''' Give 'live' vectors to connected Partial instances '''
+        ''' Give 'live' vectors to connected Partial instances 
+        
+        Args:
+            state (ndarray): An optional vector to initialise the state.
+        '''
         if state is not None:
             self.npsolve_state[:] = state
         self._emit_vectors()
@@ -310,10 +364,18 @@ class Solver():
         self.npsolve_state[:] = state
 
     def one_way_step(self, vec, *args, **kwargs):
-        ''' Method to be called every iteration with no return val 
+        ''' The method to be called every iteration with no return val 
+        
+        Args:
+            vec (ndarray): The state vector (passed in by the solver)
+            args: Optional arguments passed to step method in each Partial.
+            kwargs: Optional keyword arguments for each step method call.
+
+        Returns:
+            None
         
         Note: This method relies on other methods being used to inform the
-        solver during its iteration.
+            solver during its iteration.
         '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
@@ -323,7 +385,20 @@ class Solver():
             step(state_dct, *args, **kwargs)
                     
     def step(self, vec, *args, **kwargs):
-        ''' The method to be called every iteration by the numerical solver '''
+        ''' The method to be called every iteration by the numerical solver 
+        
+        Args:
+            vec (ndarray): The state vector (passed in by the solver)
+            args: Optional arguments passed to step method in each Partial.
+            kwargs: Optional keyword arguments for each step method call.
+
+        Returns:
+            dict: A dictionary containing keys for each variable. The values
+                must match the shape of the state. These will often contain
+                derivatives for integration problems and error or cost values
+                for optimisation problems.
+
+        '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
         ret_dct = self.npsolve_ret_dct
@@ -339,7 +414,23 @@ class Solver():
         return self.npsolve_ret
 
     def tstep(self, t, vec, *args, **kwargs):
-        ''' The method to be called every iteration by the numerical solver '''
+        ''' The method to be called every iteration by the numerical solver 
+        
+        Args:
+            vec (ndarray): The state vector (passed in by the solver)
+            args: Optional arguments passed to step method in each Partial.
+            kwargs: Optional keyword arguments for each step method call.
+
+        Returns:
+            dict: A dictionary containing keys for each variable. The values
+                must match the shape of the state. These will often contain
+                derivatives for integration problems and error or cost values
+                for optimisation problems.
+                
+        Note:
+            This method is similar ot the :meth:`step` method, but is used
+            where a time value is passed as the first argument.
+        '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
         ret_dct = self.npsolve_ret_dct
@@ -363,7 +454,14 @@ class Solver():
         return self.npsolve_ret
         
     def as_dct(self, sol):
-        ''' Split out solution array into dictionary of values '''
+        ''' Split out solution array into dictionary of values 
+        
+        Args:
+            sol (2D ndarray): An array where columns correspond to state values
+        
+        This convenience method splits out a 2D array into a dictionary of
+        vectors or arrays, with variables as keys.
+        '''
         d = {}
         for key, slc in self.npsolve_slices.items():
             d[key] = sol[:,slc]
