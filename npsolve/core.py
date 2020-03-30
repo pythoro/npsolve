@@ -95,7 +95,7 @@ class Partial():
         '''
         self.npsolve_vars[name]['init'] = np.atleast_1d(init)
 
-    def add_var(self, name, init, **kwargs):
+    def add_var(self, name, init, safe=True, **kwargs):
         ''' Add a new variable 
         
         Args:
@@ -104,12 +104,15 @@ class Partial():
                 ndarray.
             **kwargs: Optional kew word attributes for the variable.
         '''
-        if name in self.npsolve_vars:
+        if safe and name in self.npsolve_vars:
             raise KeyError(str(name) + ' already exists')
         self.npsolve_vars[name] = {}
         self.set_init(name, init)
         self.set_meta(name, **kwargs)
-        
+    
+    def clear_vars(self):
+        self.npsolve_vars = {}
+    
     def add_vars(self, dct):
         ''' Add multiple variables 
         
