@@ -469,3 +469,16 @@ class Solver():
         for key, slc in self.npsolve_slices.items():
             d[key] = sol[:,slc]
         return d
+    
+    def get_state_dct(self, squeeze=True, unitise=True):
+        dct = self.npsolve_state_dct.copy()
+        if squeeze:
+            for k in dct.keys():
+                dct[k] = np.squeeze(dct[k])
+        if unitise:
+            for k in dct.keys():
+                v = np.atleast_1d(dct[k])
+                if len(v) == 1:
+                    dct[k] = v.item()
+        return dct
+    
