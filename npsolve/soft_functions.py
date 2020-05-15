@@ -117,6 +117,61 @@ def limited(value, lower, upper, scale=DEFAULT_SCALE):
     capped = ceil(value, limit=upper, scale=scale)
     return floor(capped, limit=lower, scale=scale)
 
+def excess(value, limit=0.0, scale=DEFAULT_SCALE):
+    """ Change from 0 below limit to difference above limit softly.
+    
+    Args:
+        value (int, float, ndarray): The value(s) to soft limit
+        limit (float): The value to limit at
+        scale: A scale factor for the softening
+    
+    Returns:
+        float, ndarray: The limited value(s)
+        
+    See also:
+        soft_limit
+    """
+    if isinstance(value, np.ndarray):
+        if value.size > 1 or not SCALARISE:
+            rel = (value - limit) / scale
+            clipped = np.clip(rel, -700, 700)
+            soft_plus = np.log(1 + np.exp(clipped)) * scale
+            return limit + soft_plus
+        else:
+            value = value.item()
+    rel = (value - limit) / scale
+    clipped = min(max(rel), -700, 700)
+    soft_plus = log(1 + exp(clipped)) * scale
+    return soft_plus
+
+def shortfall(value, limit=0.0, scale=DEFAULT_SCALE):
+    """ Change from difference below limit to 0 above limit softly.
+    
+    Args:
+        value (int, float, ndarray): The value(s) to soft limit
+        limit (float): The value to limit at
+        scale: A scale factor for the softening
+    
+    Returns:
+        float, ndarray: The limited value(s)
+        
+    See also:
+        soft_limit
+    """
+    
+    if isinstance(value, np.ndarray):
+        if value.size > 1 or not SCALARISE:
+            rel = -(value - limit) / scale
+            clipped = np.clip(rel, -700, 700)
+            soft_plus = np.log(1 + np.exp(clipped)) * scale
+            return limit - soft_plus
+        else:
+            value = value.item()
+    rel = -(value - limit) / scale
+    clipped = min(max(rel, -700), 700)
+    soft_plus = log(1 + exp(clipped)) * scale
+    return -soft_plus
+
 def step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     """ A smooth step to prevent discontinuous gradient
     
