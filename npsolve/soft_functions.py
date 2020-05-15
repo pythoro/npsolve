@@ -14,7 +14,7 @@ from math import exp, log
 DEFAULT_SCALE = 1e-3
 SCALARISE = True
 
-def limit(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
+def lim(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     """ Limit the value softly to prevent discontinuous gradient
     
     Args:
@@ -99,7 +99,7 @@ def ceil(value, limit=0.0, scale=DEFAULT_SCALE):
     soft_plus = log(1 + exp(clipped)) * scale
     return limit - soft_plus
 
-def limited(value, lower, upper, scale=DEFAULT_SCALE):
+def clip(value, lower, upper, scale=DEFAULT_SCALE):
     """ Limit value to a range softly to to prevent discontinuous gradient
     
     Args:
