@@ -191,5 +191,20 @@ def soft_outside(value, lower, upper, scale=DEFAULT_SCALE):
     above = soft_above(value, limit=upper, scale=scale) 
     return below + above
 
-
-
+def soft_sign(value, scale=DEFAULT_SCALE):
+    """ A smooth step from -1 below 0 to +1 above it
+    
+    Args:
+        value (int, float, ndarray): The value(s)
+        scale: A scale factor for the softening
+    
+    Returns:
+        float, ndarray: Value(s) between 0 and 1
+        
+    Note:
+        This function uses a sigmoid function to perform smoothing. See
+        https://en.wikipedia.org/wiki/Sigmoid_function. Values for the
+        calculation are clipped to avoid overflow errors.
+    """
+    clipped = np.clip(value / scale, -700, 700)
+    return 2/(1 + np.exp(-clipped)) - 1
