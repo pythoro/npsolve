@@ -14,7 +14,7 @@ from math import exp, log
 DEFAULT_SCALE = 1e-3
 SCALARISE = True
 
-def soft_limit(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
+def limit(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     """ Limit the value softly to prevent discontinuous gradient
     
     Args:
@@ -44,7 +44,7 @@ def soft_limit(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     soft_plus = log(1 + exp(clipped)) * scale
     return limit + soft_plus * side
 
-def soft_min(value, limit=0.0, scale=DEFAULT_SCALE):
+def floor(value, limit=0.0, scale=DEFAULT_SCALE):
     """ Limit value to a minimum softly to to prevent discontinuous gradient
     
     Args:
@@ -71,7 +71,7 @@ def soft_min(value, limit=0.0, scale=DEFAULT_SCALE):
     soft_plus = log(1 + exp(clipped)) * scale
     return limit + soft_plus
 
-def soft_max(value, limit=0.0, scale=DEFAULT_SCALE):
+def ceil(value, limit=0.0, scale=DEFAULT_SCALE):
     """ Limit value to a maximum softly to to prevent discontinuous gradient
     
     Args:
@@ -99,7 +99,7 @@ def soft_max(value, limit=0.0, scale=DEFAULT_SCALE):
     soft_plus = log(1 + exp(clipped)) * scale
     return limit - soft_plus
 
-def soft_range(value, lower, upper, scale=DEFAULT_SCALE):
+def limited(value, lower, upper, scale=DEFAULT_SCALE):
     """ Limit value to a range softly to to prevent discontinuous gradient
     
     Args:
@@ -114,10 +114,10 @@ def soft_range(value, lower, upper, scale=DEFAULT_SCALE):
     See also:
         soft_limit
     """
-    capped = soft_max(value, limit=upper, scale=scale)
-    return soft_min(capped, limit=lower, scale=scale)
+    capped = ceil(value, limit=upper, scale=scale)
+    return floor(capped, limit=lower, scale=scale)
 
-def soft_step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
+def step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     """ A smooth step to prevent discontinuous gradient
     
     Args:
@@ -145,7 +145,7 @@ def soft_step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     clipped = min(max(rel, -700), 700)
     return 1/(1 + exp(-clipped))
     
-def soft_above(value, limit=0.0, scale=DEFAULT_SCALE):
+def above(value, limit=0.0, scale=DEFAULT_SCALE):
     """ A smooth step from 0 below a limit to 1 above it
     
     Args:
@@ -171,7 +171,7 @@ def soft_above(value, limit=0.0, scale=DEFAULT_SCALE):
     return 1/(1 + exp(-clipped))
 
 
-def soft_below(value, limit=0.0, scale=DEFAULT_SCALE):
+def below(value, limit=0.0, scale=DEFAULT_SCALE):
     """ A smooth step from 1 below a limit to 0 above it
     
     Args:
@@ -196,7 +196,7 @@ def soft_below(value, limit=0.0, scale=DEFAULT_SCALE):
     clipped = min(max(rel, -700), 700)
     return 1/(1 + exp(-clipped))
 
-def soft_within(value, lower, upper, scale=DEFAULT_SCALE):
+def within(value, lower, upper, scale=DEFAULT_SCALE):
     """ Steps smoothly from 0 outside a range to 1 inside it
     
     Args:
@@ -211,11 +211,11 @@ def soft_within(value, lower, upper, scale=DEFAULT_SCALE):
     See also:
         soft_step
     """
-    below = soft_below(value, limit=upper, scale=scale)
-    above = soft_above(value, limit=lower, scale=scale) 
-    return below * above
+    b = below(value, limit=upper, scale=scale)
+    a = above(value, limit=lower, scale=scale) 
+    return b * a
 
-def soft_outside(value, lower, upper, scale=DEFAULT_SCALE):
+def outside(value, lower, upper, scale=DEFAULT_SCALE):
     """ Steps smoothly from 1 outside a range to 0 inside it
     
     Args:
@@ -230,11 +230,11 @@ def soft_outside(value, lower, upper, scale=DEFAULT_SCALE):
     See also:
         soft_step
     """
-    below = soft_below(value, limit=lower, scale=scale)
-    above = soft_above(value, limit=upper, scale=scale) 
-    return below + above
+    b = below(value, limit=lower, scale=scale)
+    a = above(value, limit=upper, scale=scale) 
+    return b + a
 
-def soft_sign(value, scale=DEFAULT_SCALE):
+def sign(value, scale=DEFAULT_SCALE):
     """ A smooth step from -1 below 0 to +1 above it
     
     Args:
