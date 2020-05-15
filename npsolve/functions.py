@@ -12,6 +12,7 @@ import numpy as np
 from math import exp, log
 
 DEFAULT_SCALE = 1e-3
+SCALARISE = True
 
 def soft_limit(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     """ Limit the value softly to prevent discontinuous gradient
@@ -30,11 +31,15 @@ def soft_limit(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
         See https://en.wikipedia.org/wiki/Activation_function. Values for the
         calculation are clipped to avoid overflow errors.
     """
-    rel = (value - limit) / scale * side
     if isinstance(value, np.ndarray):
-        clipped = np.clip(rel, -700, 700)
-        soft_plus = np.log(1 + np.exp(clipped)) * scale
-        return limit + soft_plus * side
+        if value.size > 1 or not SCALARISE:
+            rel = (value - limit) / scale * side
+            clipped = np.clip(rel, -700, 700)
+            soft_plus = np.log(1 + np.exp(clipped)) * scale
+            return limit + soft_plus * side
+        else:
+            value = value.item()
+    rel = (value - limit) / scale * side
     clipped = min(max(rel, -700), 700)
     soft_plus = log(1 + exp(clipped)) * scale
     return limit + soft_plus * side
@@ -53,11 +58,15 @@ def soft_min(value, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_limit
     """
-    rel = (value - limit) / scale
     if isinstance(value, np.ndarray):
-        clipped = np.clip(rel, -700, 700)
-        soft_plus = np.log(1 + np.exp(clipped)) * scale
-        return limit + soft_plus
+        if value.size > 1 or not SCALARISE:
+            rel = (value - limit) / scale
+            clipped = np.clip(rel, -700, 700)
+            soft_plus = np.log(1 + np.exp(clipped)) * scale
+            return limit + soft_plus
+        else:
+            value = value.item()
+    rel = (value - limit) / scale
     clipped = min(max(rel), -700, 700)
     soft_plus = log(1 + exp(clipped)) * scale
     return limit + soft_plus
@@ -76,11 +85,16 @@ def soft_max(value, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_limit
     """
-    rel = -(value - limit) / scale
+    
     if isinstance(value, np.ndarray):
-        clipped = np.clip(rel, -700, 700)
-        soft_plus = np.log(1 + np.exp(clipped)) * scale
-        return limit - soft_plus
+        if value.size > 1 or not SCALARISE:
+            rel = -(value - limit) / scale
+            clipped = np.clip(rel, -700, 700)
+            soft_plus = np.log(1 + np.exp(clipped)) * scale
+            return limit - soft_plus
+        else:
+            value = value.item()
+    rel = -(value - limit) / scale
     clipped = min(max(rel, -700), 700)
     soft_plus = log(1 + exp(clipped)) * scale
     return limit - soft_plus
@@ -120,10 +134,14 @@ def soft_step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
         https://en.wikipedia.org/wiki/Sigmoid_function. Values for the
         calculation are clipped to avoid overflow errors.
     """
-    rel = (value - limit) / scale * side
     if isinstance(value, np.ndarray):
-        clipped = np.clip(rel, -700, 700)
-        return 1/(1 + np.exp(-clipped))
+        if value.size > 1 or not SCALARISE:
+            rel = (value - limit) / scale * side
+            clipped = np.clip(rel, -700, 700)
+            return 1/(1 + np.exp(-clipped))
+        else:
+            value = value.item()
+    rel = (value - limit) / scale * side
     clipped = min(max(rel, -700), 700)
     return 1/(1 + exp(-clipped))
     
@@ -141,10 +159,14 @@ def soft_above(value, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_step
     """
-    rel = (value - limit) / scale
     if isinstance(value, np.ndarray):
-        clipped = np.clip(rel, -700, 700)
-        return 1/(1 + np.exp(-clipped))
+        if value.size > 1 or not SCALARISE:
+            rel = (value - limit) / scale
+            clipped = np.clip(rel, -700, 700)
+            return 1/(1 + np.exp(-clipped))
+        else:
+            value = value.item()
+    rel = (value - limit) / scale
     clipped = min(max(rel, -700), 700)
     return 1/(1 + exp(-clipped))
 
@@ -163,10 +185,14 @@ def soft_below(value, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_step
     """
-    rel = -(value - limit) / scale
     if isinstance(value, np.ndarray):
-        clipped = np.clip(rel, -700, 700)
-        return 1/(1 + np.exp(-clipped))
+        if value.size > 1 or not SCALARISE:
+            rel = -(value - limit) / scale
+            clipped = np.clip(rel, -700, 700)
+            return 1/(1 + np.exp(-clipped))
+        else:
+            value = value.item()
+    rel = -(value - limit) / scale
     clipped = min(max(rel, -700), 700)
     return 1/(1 + exp(-clipped))
 
@@ -224,7 +250,10 @@ def soft_sign(value, scale=DEFAULT_SCALE):
         calculation are clipped to avoid overflow errors.
     """
     if isinstance(value, np.ndarray):
-        clipped = np.clip(value / scale, -700, 700)
-        return 2/(1 + np.exp(-clipped)) - 1
+        if value.size > 1 or not SCALARISE:
+            clipped = np.clip(value / scale, -700, 700)
+            return 2/(1 + np.exp(-clipped)) - 1
+        else:
+            value = value.item()
     clipped = min(max(value / scale, -700), 700)
     return 2/(1 + exp(-clipped)) - 1
