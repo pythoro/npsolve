@@ -6,3 +6,4 @@ Created on Mon Sep  2 18:52:23 2019
 """
 
 AUTO_CONNECT = False
+SCALARISE = True

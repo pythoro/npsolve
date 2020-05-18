@@ -8,8 +8,8 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, \
-    GET_PARTIALS, SET_CACHING, GET_CACHE_CLEARS, Solver
+from npsolve.core import sb, EMIT_VECTORS, EMIT_STATE, GET_VARS, \
+    GET_STEP_METHODS, GET_PARTIALS, SET_CACHING, GET_CACHE_CLEARS, Solver
 
 
 

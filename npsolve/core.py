@@ -19,6 +19,7 @@ from . import settings
 sb = fw.SignalBox()
 
 EMIT_VECTORS = 'EMIT_VECTORS'
+EMIT_STATE = 'EMIT_STATE'
 GET_VARS = 'GET_VARS'
 GET_STEP_METHODS = 'GET_STEP_METHODS'
 GET_PARTIALS = 'GET_PARTIALS'
@@ -35,6 +36,7 @@ class Partial():
     
     def __init__(self):
         self.npsolve_vars = {}
+        self.state = {}
         self.__cache_methods = self._get_cached_methods()
         self.__cache_clear_functions = self._get_cache_clear_functions()
         self.cache_clear() # Useful for iPython console autoreload.
@@ -51,6 +53,7 @@ class Partial():
         try:
             c = sb.get_container(cid)
             c.get(EMIT_VECTORS, must_exist=True).connect(self.set_vectors)
+            c.get(EMIT_STATE, must_exist=True).connect(self._set_state)
             c.get(GET_VARS, must_exist=True).connect(self._get_vars)
             c.get(GET_STEP_METHODS, must_exist=True).connect(self._get_step_methods)
             c.get(GET_PARTIALS, must_exist=True).connect(self._get_self)
@@ -74,6 +77,17 @@ class Partial():
         '''
         pass
     
+    def _set_state(self, state):
+        """ Set the state dictionary
+        
+        Args:
+            state (dict): The state dictionary
+            
+        Note:
+            The state dictionary de-numpify's scalars by default.
+        """
+        self.state = state
+    
     def _get_vars(self):
         return self.npsolve_vars
 
@@ -95,7 +109,7 @@ class Partial():
         '''
         self.npsolve_vars[name]['init'] = np.atleast_1d(init)
 
-    def add_var(self, name, init, safe=True, **kwargs):
+    def add_var(self, name, init, safe=True, live=True, **kwargs):
         ''' Add a new variable 
         
         Args:
@@ -106,9 +120,11 @@ class Partial():
         '''
         if safe and name in self.npsolve_vars:
             raise KeyError(str(name) + ' already exists')
-        self.npsolve_vars[name] = {}
-        self.set_init(name, init)
-        self.set_meta(name, **kwargs)
+        self.state[name] = init
+        if live:
+            self.npsolve_vars[name] = {}
+            self.set_init(name, init)
+            self.set_meta(name, **kwargs)
     
     def clear_vars(self):
         self.npsolve_vars = {}
@@ -177,6 +193,7 @@ class Solver():
         self._cache_clear_functions = []
         self.npsolve_isolate = None
         self._container = None
+        self.state = {}
         if settings.AUTO_CONNECT:
             self.setup_signals()
         
@@ -187,8 +204,8 @@ class Solver():
             int: The container id for the signals.
         '''
         self._container = sb.add(activate=True, remove_with=self)
-        signals = [EMIT_VECTORS, GET_VARS, GET_STEP_METHODS, GET_PARTIALS,
-                   SET_CACHING, GET_CACHE_CLEARS]
+        signals = [EMIT_VECTORS, EMIT_STATE, GET_VARS, GET_STEP_METHODS,
+                   GET_PARTIALS, SET_CACHING, GET_CACHE_CLEARS]
         self._signals = {name: sb.get(name) for name in signals}
         return self._container.id
     
@@ -281,6 +298,10 @@ class Solver():
                 state_dct=self.npsolve_state_dct,
                 ret_dct=self.npsolve_ret_dct)
 
+    def _emit_state(self):
+        ''' Pass out vectors and slices to connected Partial instances '''
+        self._signals[EMIT_STATE].emit(state=self.state)
+
     def freeze(self):
         ''' Give static copies of vectors to connected Partial instances 
         
@@ -335,6 +356,12 @@ class Solver():
             out.extend(l)
         return out
 
+    def _update_state(self, state_dct):
+        self.state.update(state_dct)
+        if settings.SCALARISE:
+            d = {k: d.item() for k, d in state_dct.items() if d.size == 1}
+            self.state.update(d)
+
     def npsolve_init(self, pinned=None):
         ''' Initialise the Partials and be ready to solve 
         
@@ -345,6 +372,8 @@ class Solver():
         dct = self._fetch_vars()
         slices, state, ret = self._setup_vecs(dct, pinned)
         state_dct, ret_dct = self._make_dcts(slices, state, ret, pinned)
+        self.state = dict(state_dct)
+        self._update_state(state_dct)
         self.npsolve_variables = dct
         self.npsolve_slices = slices
         self.npsolve_state = state
@@ -353,6 +382,7 @@ class Solver():
         self.npsolve_state_dct = state_dct
         self.npsolve_ret_dct = ret_dct
         self._emit_vectors()
+        self._emit_state()
         self._step_methods = self._fetch_step_methods()
         self._cache_clear_functions = self._fetch_cache_clears()
         self._signals[SET_CACHING].emit(enable=True)
@@ -382,6 +412,7 @@ class Solver():
         '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
+        self._update_state(state_dct)
         for f in self._cache_clear_functions:
             f()
         for step in self._step_methods:
@@ -404,6 +435,7 @@ class Solver():
         '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
+        self._update_state(state_dct)
         ret_dct = self.npsolve_ret_dct
         for f in self._cache_clear_functions:
             f()
@@ -436,6 +468,7 @@ class Solver():
         '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
+        self._update_state(state_dct)
         ret_dct = self.npsolve_ret_dct
         for f in self._cache_clear_functions:
             f()
