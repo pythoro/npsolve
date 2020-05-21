@@ -29,19 +29,24 @@ def lim(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     Note:
         This function uses a softplus function to perform smoothing.
         See https://en.wikipedia.org/wiki/Activation_function. Values for the
-        calculation are clipped to avoid overflow errors.
+        calculation are clipped to 700 avoid overflow errors, as the max
+        value for a float is exp(709.782).
     """
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = (value - limit) / scale * side
-            clipped = np.clip(rel, -700, 700)
+            clipped = np.minimum(rel, 700)
             soft_plus = np.log(1 + np.exp(clipped)) * scale
-            return limit + soft_plus * side
+            out = limit + soft_plus*side
+            filt = rel > 699
+            out[filt] = value[filt]
+            return out
         else:
             value = value.item()
     rel = (value - limit) / scale * side
-    clipped = min(max(rel, -700), 700)
-    soft_plus = log(1 + exp(clipped)) * scale
+    if rel > 700:
+        return value
+    soft_plus = log(1 + exp(rel)) * scale
     return limit + soft_plus * side
 
 def floor(value, limit=0.0, scale=DEFAULT_SCALE):
@@ -61,14 +66,18 @@ def floor(value, limit=0.0, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = (value - limit) / scale
-            clipped = np.clip(rel, -700, 700)
+            clipped = np.minimum(rel, 700)
             soft_plus = np.log(1 + np.exp(clipped)) * scale
-            return limit + soft_plus
+            out = limit + soft_plus
+            filt = rel > 699
+            out[filt] = value[filt]
+            return out
         else:
             value = value.item()
     rel = (value - limit) / scale
-    clipped = min(max(rel), -700, 700)
-    soft_plus = log(1 + exp(clipped)) * scale
+    if rel > 700:
+        return value
+    soft_plus = log(1 + exp(rel)) * scale
     return limit + soft_plus
 
 def ceil(value, limit=0.0, scale=DEFAULT_SCALE):
@@ -89,14 +98,18 @@ def ceil(value, limit=0.0, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = -(value - limit) / scale
-            clipped = np.clip(rel, -700, 700)
+            clipped = np.minimum(rel, 700)
             soft_plus = np.log(1 + np.exp(clipped)) * scale
-            return limit - soft_plus
+            out = limit - soft_plus
+            filt = rel > 699
+            out[filt] = value[filt]
+            return out
         else:
             value = value.item()
     rel = -(value - limit) / scale
-    clipped = min(max(rel, -700), 700)
-    soft_plus = log(1 + exp(clipped)) * scale
+    if rel > 700:
+        return value
+    soft_plus = log(1 + exp(rel)) * scale
     return limit - soft_plus
 
 def clip(value, lower, upper, scale=DEFAULT_SCALE):
@@ -134,14 +147,17 @@ def excess(value, limit=0.0, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = (value - limit) / scale
-            clipped = np.clip(rel, -700, 700)
-            soft_plus = np.log(1 + np.exp(clipped)) * scale
-            return limit + soft_plus
+            clipped = np.minimum(rel, 700)
+            out = np.log(1 + np.exp(clipped)) * scale
+            filt = rel > 699
+            out[filt] = value[filt] - limit
+            return out
         else:
             value = value.item()
     rel = (value - limit) / scale
-    clipped = min(max(rel), -700, 700)
-    soft_plus = log(1 + exp(clipped)) * scale
+    if rel > 700:
+        return value - limit
+    soft_plus = log(1 + exp(rel)) * scale
     return soft_plus
 
 def shortfall(value, limit=0.0, scale=DEFAULT_SCALE):
@@ -162,14 +178,17 @@ def shortfall(value, limit=0.0, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = -(value - limit) / scale
-            clipped = np.clip(rel, -700, 700)
-            soft_plus = np.log(1 + np.exp(clipped)) * scale
-            return limit - soft_plus
+            clipped = np.minimum(rel, 700)
+            out = np.log(1 + np.exp(clipped)) * scale
+            filt = rel > 699
+            out[filt] = value[filt] - limit
+            return -out
         else:
             value = value.item()
     rel = -(value - limit) / scale
-    clipped = min(max(rel, -700), 700)
-    soft_plus = log(1 + exp(clipped)) * scale
+    if rel > 700:
+        return value - limit
+    soft_plus = log(1 + exp(rel)) * scale
     return -soft_plus
 
 def step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
@@ -192,12 +211,12 @@ def step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = (value - limit) / scale * side
-            clipped = np.clip(rel, -700, 700)
+            clipped = np.minimum(rel, 700)
             return 1/(1 + np.exp(-clipped))
         else:
             value = value.item()
     rel = (value - limit) / scale * side
-    clipped = min(max(rel, -700), 700)
+    clipped = min(rel, 700)
     return 1/(1 + exp(-clipped))
     
 def above(value, limit=0.0, scale=DEFAULT_SCALE):
@@ -217,12 +236,12 @@ def above(value, limit=0.0, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = (value - limit) / scale
-            clipped = np.clip(rel, -700, 700)
+            clipped = np.minimum(rel, 700)
             return 1/(1 + np.exp(-clipped))
         else:
             value = value.item()
     rel = (value - limit) / scale
-    clipped = min(max(rel, -700), 700)
+    clipped = min(rel, 700)
     return 1/(1 + exp(-clipped))
 
 
@@ -243,12 +262,12 @@ def below(value, limit=0.0, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = -(value - limit) / scale
-            clipped = np.clip(rel, -700, 700)
+            clipped = np.minimum(rel, 700)
             return 1/(1 + np.exp(-clipped))
         else:
             value = value.item()
     rel = -(value - limit) / scale
-    clipped = min(max(rel, -700), 700)
+    clipped = min(rel, 700)
     return 1/(1 + exp(-clipped))
 
 def within(value, lower, upper, scale=DEFAULT_SCALE):
@@ -306,9 +325,9 @@ def sign(value, scale=DEFAULT_SCALE):
     """
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
-            clipped = np.clip(value / scale, -700, 700)
+            clipped = np.minimum(value / scale, 700)
             return 2/(1 + np.exp(-clipped)) - 1
         else:
             value = value.item()
-    clipped = min(max(value / scale, -700), 700)
+    clipped = min(value / scale, 700)
     return 2/(1 + exp(-clipped)) - 1
