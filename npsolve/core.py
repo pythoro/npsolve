@@ -26,6 +26,8 @@ GET_PARTIALS = 'GET_PARTIALS'
 SET_CACHING = 'SET_CACHING'
 GET_CACHE_CLEARS = 'GET_CACHE_CLEARS'
 
+      
+
 class Partial():
     ''' A base class responsible for a set of variables 
     
@@ -120,7 +122,7 @@ class Partial():
         '''
         if safe and name in self.npsolve_vars:
             raise KeyError(str(name) + ' already exists')
-        self.state[name] = init
+        self.state[name] = np.atleast_1d(init)
         if live:
             self.npsolve_vars[name] = {}
             self.set_init(name, init)
@@ -300,7 +302,7 @@ class Solver():
 
     def _emit_state(self):
         ''' Pass out vectors and slices to connected Partial instances '''
-        self._signals[EMIT_STATE].emit(state=self.state)
+        self._signals[EMIT_STATE].emit(state=self.npsolve_state_dct)
 
     def freeze(self):
         ''' Give static copies of vectors to connected Partial instances 
@@ -356,12 +358,6 @@ class Solver():
             out.extend(l)
         return out
 
-    def _update_state(self, state_dct):
-        self.state.update(state_dct)
-        if settings.SCALARISE:
-            d = {k: d.item() for k, d in state_dct.items() if d.size == 1}
-            self.state.update(d)
-
     def npsolve_init(self, pinned=None):
         ''' Initialise the Partials and be ready to solve 
         
@@ -372,8 +368,6 @@ class Solver():
         dct = self._fetch_vars()
         slices, state, ret = self._setup_vecs(dct, pinned)
         state_dct, ret_dct = self._make_dcts(slices, state, ret, pinned)
-        self.state = dict(state_dct)
-        self._update_state(state_dct)
         self.npsolve_variables = dct
         self.npsolve_slices = slices
         self.npsolve_state = state
@@ -412,7 +406,6 @@ class Solver():
         '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
-        self._update_state(state_dct)
         for f in self._cache_clear_functions:
             f()
         for step in self._step_methods:
@@ -435,7 +428,6 @@ class Solver():
         '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
-        self._update_state(state_dct)
         ret_dct = self.npsolve_ret_dct
         for f in self._cache_clear_functions:
             f()
@@ -468,7 +460,6 @@ class Solver():
         '''
         self.npsolve_state[:] = vec
         state_dct = self.npsolve_state_dct
-        self._update_state(state_dct)
         ret_dct = self.npsolve_ret_dct
         for f in self._cache_clear_functions:
             f()

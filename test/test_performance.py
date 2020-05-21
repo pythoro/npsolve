@@ -11,7 +11,6 @@ import timeit
 
 from npsolve.core import sb, Partial, Solver
 
-
 class Partial_1(Partial):
     npsolve_name = 'partial_1'
     
@@ -75,6 +74,5 @@ class Test_Solver(unittest.TestCase):
         print()
         print('Relative speed: ' + '{:0.3f}'.format(time/baseline))
         self.assertLess(time, baseline*1.15)
-        
         
         

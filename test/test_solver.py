@@ -12,7 +12,6 @@ from npsolve.core import sb, EMIT_VECTORS, EMIT_STATE, GET_VARS, \
     GET_STEP_METHODS, GET_PARTIALS, SET_CACHING, GET_CACHE_CLEARS, Solver
 
 
-
 class S(Solver):
     pass
 
