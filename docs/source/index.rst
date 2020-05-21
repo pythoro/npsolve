@@ -10,7 +10,7 @@ Welcome to npsolve's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   npsolve
+   package
 
 Indices and tables
 ==================
