@@ -507,6 +507,13 @@ class Solver():
         return dct
     
     def connect(self, partials):
+        """ Connect a dict or list of partials to the Solver instance 
+        
+        Args:
+            partials (list, dict, Partial): A list or dictionary of Partial
+                instances.
+                
+        """
         if not isinstance(partials, (dict, list, Partial)):
             raise ValueError('partials argument must be a list or dict of ' +
                              'npsolve.Partial instances.')

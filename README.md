@@ -144,7 +144,7 @@ def run():
 
 ```
 
-Let's set up a plot to see the results. Use the *npsolve_slices* attribute of
+Let's set up a plot to see the results. Use the `npsolve_slices` attribute of
 the Solver to get the right columns.
 
 ```python

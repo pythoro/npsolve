@@ -6,7 +6,8 @@ solve an ODE. Instead of equations, though, we're using class methods.
 
 
 First, setup some classes that you want to do calculations with. We do this by
-using the :meth:`add_var` method to setup variables and their initial values.
+using the :meth:`~core.Partial.add_var` method to setup variables and
+their initial values.
 
 ::
 
@@ -105,8 +106,9 @@ solvers. We can make models with different components. It's flexible and easy
 to maintain!
 
 To run, we just have to instantiate the Solver and Partial instances,
-then pass a list or dictionary of the Partial instances to the `connect` 
-method of the Solver. They'll link up automatically through *fastwire*.
+then pass a list or dictionary of the Partial instances to the 
+:meth:`~core.Solver.connect` method of the Solver. They'll link up
+automatically through *fastwire*.
 
 ::
     
