@@ -20,7 +20,12 @@ setuptools.setup(
     description="Easier object-oriented calculations for numerical solvers.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pythoro/npsolve.git",
+    url='https://github.com/pythoro/npsolve.git',
+    project_urls={
+        'Documentation': 'https://npsolve.readthedocs.io/en/latest/',
+        'Source': 'https://github.com/pythoro/npsolve.git',
+        'Tracker': 'https://github.com/pythoro/npsolve/issues',
+    },
     download_url="https://github.com/pythoro/npsolve/archive/v0.0.9.zip",
     packages=['npsolve'],
     keywords=['NUMERICAL SOLVER', 'NUMPY', 'SCIPY', 'ODE', 'INTEGRATION'],
