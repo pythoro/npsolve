@@ -211,12 +211,12 @@ def step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = (value - limit) / scale * side
-            clipped = np.minimum(rel, 700)
+            clipped = np.maximum(rel, -700)
             return 1/(1 + np.exp(-clipped))
         else:
             value = value.item()
     rel = (value - limit) / scale * side
-    clipped = min(rel, 700)
+    clipped = max(rel, -700)
     return 1/(1 + exp(-clipped))
     
 def above(value, limit=0.0, scale=DEFAULT_SCALE):
@@ -236,12 +236,12 @@ def above(value, limit=0.0, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = (value - limit) / scale
-            clipped = np.minimum(rel, 700)
+            clipped = np.maximum(rel, -700)
             return 1/(1 + np.exp(-clipped))
         else:
             value = value.item()
     rel = (value - limit) / scale
-    clipped = min(rel, 700)
+    clipped = max(rel, -700)
     return 1/(1 + exp(-clipped))
 
 
@@ -262,12 +262,12 @@ def below(value, limit=0.0, scale=DEFAULT_SCALE):
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
             rel = -(value - limit) / scale
-            clipped = np.minimum(rel, 700)
+            clipped = np.maximum(rel, -700)
             return 1/(1 + np.exp(-clipped))
         else:
             value = value.item()
     rel = -(value - limit) / scale
-    clipped = min(rel, 700)
+    clipped = max(rel, -700)
     return 1/(1 + exp(-clipped))
 
 def within(value, lower, upper, scale=DEFAULT_SCALE):
@@ -325,9 +325,9 @@ def sign(value, scale=DEFAULT_SCALE):
     """
     if isinstance(value, np.ndarray):
         if value.size > 1 or not SCALARISE:
-            clipped = np.minimum(value / scale, 700)
+            clipped = np.maximum(value / scale, -700)
             return 2/(1 + np.exp(-clipped)) - 1
         else:
             value = value.item()
-    clipped = min(value / scale, 700)
+    clipped = max(value / scale, -700)
     return 2/(1 + exp(-clipped)) - 1
