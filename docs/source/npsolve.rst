@@ -1,6 +1,15 @@
 npsolve package
 ===============
 
+Module contents
+---------------
+
+.. automodule:: npsolve
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 Submodules
 ----------
 
@@ -20,11 +29,13 @@ npsolve.core module
    :undoc-members:
    :show-inheritance:
 
+npsolve.soft_functions module
+-----------------------------
 
-Module contents
----------------
-
-.. automodule:: npsolve
+.. automodule:: npsolve.soft_functions
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+
