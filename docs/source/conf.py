@@ -12,7 +12,7 @@
 #
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__name__), '..'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 
 # -- Project information -----------------------------------------------------
@@ -57,6 +57,6 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 
-autodoc_mock_imports = ['numpy', 'scipy', 'fastwire']
+autodoc_mock_imports = ['numpy', 'fastwire']
 
 master_doc = 'index'
