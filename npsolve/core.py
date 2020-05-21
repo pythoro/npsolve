@@ -506,3 +506,18 @@ class Solver():
                     dct[k] = v.item()
         return dct
     
+    def connect(self, partials):
+        self.remove_signals()
+        self.setup_signals()
+        if isinstance(partials, dict):
+            for partial in partials.values():
+                partial.connect()
+        elif isinstance(partials, list):
+            for partial in partials:
+                partial.connect()
+        elif isinstance(partials, Partial):
+            partials.connect()
+        else:
+            raise ValueError('partials argument must be a list or dict of ' +
+                             'npsolve.Partial instances.')
+        self.close_signals()
