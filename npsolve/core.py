@@ -507,6 +507,9 @@ class Solver():
         return dct
     
     def connect(self, partials):
+        if not isinstance(partials, (dict, list, Partial)):
+            raise ValueError('partials argument must be a list or dict of ' +
+                             'npsolve.Partial instances.')
         self.remove_signals()
         self.setup_signals()
         if isinstance(partials, dict):
@@ -515,9 +518,6 @@ class Solver():
         elif isinstance(partials, list):
             for partial in partials:
                 partial.connect()
-        elif isinstance(partials, Partial):
-            partials.connect()
         else:
-            raise ValueError('partials argument must be a list or dict of ' +
-                             'npsolve.Partial instances.')
+            partials.connect()
         self.close_signals()
