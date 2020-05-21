@@ -14,14 +14,14 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name="npsolve",
-    version="0.0.7",
+    version="0.0.8",
     author="Reuben Rusk",
     author_email="pythoro@mindquip.com",
     description="Easier object-oriented calculations for numerical solvers.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pythoro/npsolve.git",
-    download_url="https://github.com/pythoro/npsolve/archive/v0.0.7.zip",
+    download_url="https://github.com/pythoro/npsolve/archive/v0.0.8.zip",
     packages=['npsolve'],
     keywords=['NUMERICAL SOLVER', 'NUMPY', 'SCIPY', 'ODE', 'INTEGRATION'],
     classifiers=[
