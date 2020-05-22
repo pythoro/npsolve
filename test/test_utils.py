@@ -6,12 +6,11 @@ Created on Fri May 22 11:55:42 2020
 """
 
 import unittest
-import numpy as np
 
 from npsolve import utils
 
 
-class Test_Utils(unittest.TestCase):
+class Test_Util_Containers(unittest.TestCase):
        
     def test_get_dict(self):
         d = utils.get_dict('test')
@@ -30,4 +29,4 @@ class Test_Utils(unittest.TestCase):
         d = utils.get_list_container('test')
         lst = d['a']
         self.assertTrue(isinstance(lst, list))
-        
+
