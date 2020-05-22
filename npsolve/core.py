@@ -381,9 +381,13 @@ class Solver():
         self._cache_clear_functions = self._fetch_cache_clears()
         self._signals[SET_CACHING].emit(enable=True)
 
+    def npsolve_finish(self):
+        """ Tidy up after a round of solving """
+        self._signals[SET_CACHING].emit(enable=False)
+
     @contextmanager
     def pinned(self, dct):
-        ''' A context manager that unpinned all variables on exit '''
+        ''' A context manager that unpins all variables on exit '''
         self.npsolve_init(pinned=dct)
         yield
         state = self.npsolve_state.copy()
@@ -484,14 +488,19 @@ class Solver():
         ''' Split out solution array into dictionary of values 
         
         Args:
-            sol (2D ndarray): An array where columns correspond to state values
+            sol (ndarray): A 1D or 2D array where columns correspond to state
+                values
         
         This convenience method splits out a 2D array into a dictionary of
         vectors or arrays, with variables as keys.
         '''
         d = {}
-        for key, slc in self.npsolve_slices.items():
-            d[key] = sol[:,slc]
+        if sol.ndim == 1:
+            for key, slc in self.npsolve_slices.items():
+                d[key] = sol[slc]
+        if sol.ndim == 2:
+            for key, slc in self.npsolve_slices.items():
+                d[key] = sol[:,slc]
         return d
     
     def get_state_dct(self, squeeze=True, unitise=True):

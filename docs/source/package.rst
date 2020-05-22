@@ -8,3 +8,4 @@ Package documentation
    npsolve.core
    npsolve.cache
    npsolve.soft_functions
+   npsolve.solvers
