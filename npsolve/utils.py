@@ -52,3 +52,6 @@ def get_set(name):
 
 def get_list_container(name):
     return list_container_container[name]
+
+get_status = get_dict
+get_logger = get_list_container

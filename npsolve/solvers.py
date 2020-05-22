@@ -32,10 +32,10 @@ class Integrator(core.Solver):
         status (defaultdict): A dictionary that contains status flags. Key
             flags are npsolve.solvers.FINAL and npsolve.solvers.STOP (which are
             strings). The default should be a function that returns None.
-            Obtain one by calling `npsolve.get_dict(<name>)`.
+            Obtain one by calling `npsolve.get_status(<name>)`.
         logger (defaultdict): A dictionary in which the 
             default values are lists. Obtain one by calling
-            `npsolve.get_list_container(<name>)`.
+            `npsolve.get_solver(<name>)`.
         framerate (float): [OPTIONAL] The number of return values per unit x
             (which is often time). Defaults to 60.0.
         interface_cls (class): [OPTIONAL] The class of interface to use for
