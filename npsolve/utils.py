@@ -4,9 +4,9 @@ Created on Sat Sep 14 08:31:52 2019
 
 @author: Reuben
 
-This module is about logging extra variables during solving.
+This module contains helper functions and methods that help you get the most
+from npsolve.
 
-The recommended way is to use a List_Container.
 
 """
 

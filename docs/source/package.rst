@@ -9,3 +9,4 @@ Package documentation
    npsolve.cache
    npsolve.soft_functions
    npsolve.solvers
+   npsolve.utils
