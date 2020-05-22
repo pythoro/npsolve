@@ -14,7 +14,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name="npsolve",
-    version="0.0.9",
+    version="0.1.0",
     author="Reuben Rusk",
     author_email="pythoro@mindquip.com",
     description="Easier object-oriented calculations for numerical solvers.",
@@ -26,7 +26,7 @@ setuptools.setup(
         'Source': 'https://github.com/pythoro/npsolve.git',
         'Tracker': 'https://github.com/pythoro/npsolve/issues',
     },
-    download_url="https://github.com/pythoro/npsolve/archive/v0.0.9.zip",
+    download_url="https://github.com/pythoro/npsolve/archive/v0.1.0.zip",
     packages=['npsolve'],
     keywords=['NUMERICAL SOLVER', 'NUMPY', 'SCIPY', 'ODE', 'INTEGRATION'],
     classifiers=[
