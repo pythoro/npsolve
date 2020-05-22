@@ -100,11 +100,8 @@ class Timeseries():
         self._tcks = self._make_splines(xs, ys)
 
     @classmethod
-    def _read_from_csv(cls, fname, x_col, y_col, skip_header=0, 
-                 delimiter=',', **kwargs):
-        usecols = (x_col, y_col)
-        arr = np.genfromtxt(fname, usecols=usecols,
-                    skip_header=skip_header, delimiter=delimiter, **kwargs)
+    def _read_from_csv(cls, **kwargs):
+        arr = np.genfromtxt(**kwargs)
         xs = arr[:,0]
         ys = arr[:,1]
         return xs, ys
@@ -124,8 +121,9 @@ class Timeseries():
             **kwargs: [Optional] Other keyword arguments passed to 
                 numpy.genfromtxt.
         """
-        xs, ys = cls._read_from_csv(fname=fname, x_col=x_col,
-                     y_col=y_col, skip_header=skip_header, delimiter=delimiter,
+        usecols = (x_col, y_col)
+        xs, ys = cls._read_from_csv(fname=fname, usecols=usecols,
+                        skip_header=skip_header, delimiter=delimiter,
                      **kwargs)
         return cls(xs, ys)
         
