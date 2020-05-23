@@ -6,9 +6,13 @@
 Welcome to npsolve's documentation!
 ===================================
 
-The *npsolve* package is a small, simple package built on *numpy* and
-*fastwire* to make it easy to use object-oriented classes and methods for
-the calculation step for numerical solvers.
+The *npsolve* package lets you use object-oriented classes and
+methods for calculations with numerical solvers. 
+
+Instead of defining equations, you can write methods with any combination of
+logic and equations. It decouples the calculations from the machinery to
+numerically iterate with them, giving you all the benefits you'd expect
+from objects.
 
 Many numerical solvers (like those in *scipy*) provide candidate solutions as
 a numpy ndarray. They often also require a numpy ndarray as a return value
