@@ -130,8 +130,8 @@ def clip(value, lower, upper, scale=DEFAULT_SCALE):
     capped = ceil(value, limit=upper, scale=scale)
     return floor(capped, limit=lower, scale=scale)
 
-def excess(value, limit=0.0, scale=DEFAULT_SCALE):
-    """ Change from 0 below limit to difference above limit softly.
+def posdiff(value, limit=0.0, scale=DEFAULT_SCALE):
+    """ Positive-only difference (0 below limit to difference above limit)
     
     Args:
         value (int, float, ndarray): The value(s) to soft limit
@@ -160,8 +160,8 @@ def excess(value, limit=0.0, scale=DEFAULT_SCALE):
     soft_plus = log(1 + exp(rel)) * scale
     return soft_plus
 
-def shortfall(value, limit=0.0, scale=DEFAULT_SCALE):
-    """ Change from difference below limit to 0 above limit softly.
+def negdiff(value, limit=0.0, scale=DEFAULT_SCALE):
+    """ Negative-only difference (difference below limit to 0 above limit)
     
     Args:
         value (int, float, ndarray): The value(s) to soft limit

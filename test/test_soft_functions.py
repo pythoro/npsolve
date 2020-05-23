@@ -147,58 +147,58 @@ class Test_clip_numpy(Test_clip_scalar):
         self.vals = np.array(self.vals)
 
 
-class Test_excess_scalar(unittest.TestCase):
+class Test_posdiff_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
        
     def test_m1000(self):
-        val = soft.excess(self.vals[0], self.limit, scale=0.001)
+        val = soft.posdiff(self.vals[0], self.limit, scale=0.001)
         self.assertEqual(val, 0)
         
     def test_25(self):
-        val = soft.excess(self.vals[1], self.limit, scale=0.001)
+        val = soft.posdiff(self.vals[1], self.limit, scale=0.001)
         self.assertEqual(val, 0)
 
     def test_35(self):
-        val = soft.excess(self.vals[2], self.limit, scale=0.001)
+        val = soft.posdiff(self.vals[2], self.limit, scale=0.001)
         self.assertEqual(val, self.vals[2] - self.limit)
 
     def test_1000(self):
-        val = soft.excess(self.vals[3], self.limit, scale=0.001)
+        val = soft.posdiff(self.vals[3], self.limit, scale=0.001)
         self.assertEqual(val, self.vals[3] - self.limit)
 
 
-class Test_excess_numpy(Test_excess_scalar):
+class Test_posdiff_numpy(Test_posdiff_scalar):
     def setUp(self):
         super().setUp()
         self.vals = np.array(self.vals)
         self.limit = 3.0
         
 
-class Test_shortfall_scalar(unittest.TestCase):
+class Test_negdiff_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
        
     def test_m1000(self):
-        val = soft.shortfall(self.vals[0], self.limit, scale=0.001)
+        val = soft.negdiff(self.vals[0], self.limit, scale=0.001)
         self.assertEqual(val, self.vals[0] - self.limit)
         
     def test_25(self):
-        val = soft.shortfall(self.vals[1], self.limit, scale=0.001)
+        val = soft.negdiff(self.vals[1], self.limit, scale=0.001)
         self.assertEqual(val, self.vals[1] - self.limit)
 
     def test_35(self):
-        val = soft.shortfall(self.vals[2], self.limit, scale=0.001)
+        val = soft.negdiff(self.vals[2], self.limit, scale=0.001)
         self.assertEqual(val, 0)
 
     def test_1000(self):
-        val = soft.shortfall(self.vals[3], self.limit, scale=0.001)
+        val = soft.negdiff(self.vals[3], self.limit, scale=0.001)
         self.assertEqual(val, 0)
 
 
-class Test_shortfall_numpy(Test_shortfall_scalar):
+class Test_negdiff_numpy(Test_negdiff_scalar):
     def setUp(self):
         super().setUp()
         self.vals = np.array(self.vals)
