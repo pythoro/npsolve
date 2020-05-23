@@ -17,7 +17,7 @@ First, the setup:
     import npsolve
     from npsolve.utils import Timeseries
     
-    from .tutorial_2 import run
+    from tutorial_2 import run
 
 Notice, we're going to reuse the Solver and run function we set up in
 Tutorial 2, but for a completely different model.
