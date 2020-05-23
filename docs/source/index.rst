@@ -27,7 +27,7 @@ much easier to modify and maintain.
    :maxdepth: 2
    :caption: Contents:
 
-   quickstart
+   tutorials
    package
 
 Indices and tables

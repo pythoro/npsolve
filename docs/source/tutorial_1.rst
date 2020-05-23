@@ -1,5 +1,5 @@
-Quickstart
-==========
+Tutorial 1 - Basics
+===================
 
 Let's use npsolve to do some integration through time, like you would to
 solve an ODE. Instead of equations, though, we're using class methods.
@@ -136,11 +136,12 @@ of the Solver to get us the right columns.
         plt.legend()
 
 
-Run it and see what happens!
+Now let's run it!
 
 ::
 
     res, s = run()
     plot(res, s)
 
-
+.. image:: ../../examples/tutorial_1.png
+    :width: 600

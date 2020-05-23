@@ -3,6 +3,9 @@
 Created on Mon Sep  2 16:48:33 2019
 
 @author: Reuben
+
+This example for Tutorial 1 introduces the basics of npsolve.
+
 """
 
 import numpy as np
