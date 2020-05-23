@@ -50,9 +50,9 @@ class Component2(npsolve.Partial):
 from scipy.integrate import odeint
 
 class Solver(npsolve.Solver):
-    def solve(self):
+    def solve(self, t_end=10):
         self.npsolve_init() # Initialise
-        self.t_vec = np.linspace(0, 10, 1001)
+        self.t_vec = np.linspace(0, t_end, 1001)
         result = odeint(self.step, self.npsolve_initial_values, self.t_vec)
         return result
 

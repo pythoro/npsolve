@@ -59,21 +59,19 @@ class Ball(npsolve.Partial):
 
        
 class Solver(npsolve.Solver):
-    def solve(self):
+    def solve(self, t_end=3.0, n=100001):
         self.npsolve_init() # Initialise
-        t_vec = np.linspace(0, 3, 100001)
+        t_vec = np.linspace(0, t_end, n)
         solution = odeint(self.step, self.npsolve_initial_values, t_vec)
         dct = self.as_dct(solution)
         dct['time'] = t_vec
         return dct
 
 
-def run():
+def run(partials, t_end=3.0, n=100001):
     solver = Solver()
-    partial = Ball()
-    solver.connect(partial)
-    return solver.solve()
-
+    solver.connect(partials)
+    return solver.solve(t_end=t_end, n=n)
 
 def plot(dct):
     plt.plot(dct['position'][:,0], dct['position'][:,1], label='position')
