@@ -11,7 +11,7 @@ trouble for numerical methods.
 import numpy as np
 from math import exp, log
 
-DEFAULT_SCALE = 1e-3
+DEFAULT_SCALE = 1e-4
 SCALARISE = True
 
 def lim(x, limit=0.0, side=1, scale=DEFAULT_SCALE):
