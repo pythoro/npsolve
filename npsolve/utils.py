@@ -129,7 +129,7 @@ class Timeseries():
         
     def _make_splines(self, xs, ys):
         """ Make the splines """
-        base = splrep(xs, ys)
+        base = splrep(xs, ys, s=0)
         tcks = {
                 -1: splantider(base, 1),
                 0: base,
