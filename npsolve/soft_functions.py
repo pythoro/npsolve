@@ -14,11 +14,11 @@ from math import exp, log
 DEFAULT_SCALE = 1e-3
 SCALARISE = True
 
-def lim(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
+def lim(x, limit=0.0, side=1, scale=DEFAULT_SCALE):
     """ Limit the value softly to prevent discontinuous gradient
     
     Args:
-        value (int, float, ndarray): The value(s) to soft limit
+        x (int, float, ndarray): The value(s) to soft limit
         limit (float): The value to limit at
         side (int): 1 for min, -1 for max
         scale: A scale factor for the softening
@@ -32,28 +32,28 @@ def lim(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
         calculation are clipped to 700 avoid overflow errors, as the max
         value for a float is exp(709.782).
     """
-    if isinstance(value, np.ndarray):
-        if value.size > 1 or not SCALARISE:
-            rel = (value - limit) / scale * side
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            rel = (x - limit) / scale * side
             clipped = np.minimum(rel, 700)
             soft_plus = np.log(1 + np.exp(clipped)) * scale
             out = limit + soft_plus*side
             filt = rel > 699
-            out[filt] = value[filt]
+            out[filt] = x[filt]
             return out
         else:
-            value = value.item()
-    rel = (value - limit) / scale * side
+            x = x.item()
+    rel = (x - limit) / scale * side
     if rel > 700:
-        return value
+        return x
     soft_plus = log(1 + exp(rel)) * scale
     return limit + soft_plus * side
 
-def floor(value, limit=0.0, scale=DEFAULT_SCALE):
+def floor(x, limit=0.0, scale=DEFAULT_SCALE):
     """ Limit value to a minimum softly to to prevent discontinuous gradient
     
     Args:
-        value (int, float, ndarray): The value(s) to soft limit
+        x (int, float, ndarray): The value(s) to soft limit
         limit (float): The value to limit at
         scale: A scale factor for the softening
     
@@ -63,28 +63,28 @@ def floor(value, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_limit
     """
-    if isinstance(value, np.ndarray):
-        if value.size > 1 or not SCALARISE:
-            rel = (value - limit) / scale
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            rel = (x - limit) / scale
             clipped = np.minimum(rel, 700)
             soft_plus = np.log(1 + np.exp(clipped)) * scale
             out = limit + soft_plus
             filt = rel > 699
-            out[filt] = value[filt]
+            out[filt] = x[filt]
             return out
         else:
-            value = value.item()
-    rel = (value - limit) / scale
+            x = x.item()
+    rel = (x - limit) / scale
     if rel > 700:
-        return value
+        return x
     soft_plus = log(1 + exp(rel)) * scale
     return limit + soft_plus
 
-def ceil(value, limit=0.0, scale=DEFAULT_SCALE):
+def ceil(x, limit=0.0, scale=DEFAULT_SCALE):
     """ Limit value to a maximum softly to to prevent discontinuous gradient
     
     Args:
-        value (int, float, ndarray): The value(s) to soft limit
+        x (int, float, ndarray): The value(s) to soft limit
         limit (float): The value to limit at
         scale: A scale factor for the softening
     
@@ -95,28 +95,28 @@ def ceil(value, limit=0.0, scale=DEFAULT_SCALE):
         soft_limit
     """
     
-    if isinstance(value, np.ndarray):
-        if value.size > 1 or not SCALARISE:
-            rel = -(value - limit) / scale
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            rel = -(x - limit) / scale
             clipped = np.minimum(rel, 700)
             soft_plus = np.log(1 + np.exp(clipped)) * scale
             out = limit - soft_plus
             filt = rel > 699
-            out[filt] = value[filt]
+            out[filt] = x[filt]
             return out
         else:
-            value = value.item()
-    rel = -(value - limit) / scale
+            x = x.item()
+    rel = -(x - limit) / scale
     if rel > 700:
-        return value
+        return x
     soft_plus = log(1 + exp(rel)) * scale
     return limit - soft_plus
 
-def clip(value, lower, upper, scale=DEFAULT_SCALE):
+def clip(x, lower, upper, scale=DEFAULT_SCALE):
     """ Limit value to a range softly to to prevent discontinuous gradient
     
     Args:
-        value (int, float, ndarray): The value(s) to soft limit
+        x (int, float, ndarray): The value(s) to soft limit
         lower (float): The lower threshold
         upper (float): The upper threshold
         scale: A scale factor for the softening
@@ -127,14 +127,14 @@ def clip(value, lower, upper, scale=DEFAULT_SCALE):
     See also:
         soft_limit
     """
-    capped = ceil(value, limit=upper, scale=scale)
+    capped = ceil(x, limit=upper, scale=scale)
     return floor(capped, limit=lower, scale=scale)
 
-def posdiff(value, limit=0.0, scale=DEFAULT_SCALE):
+def posdiff(x, limit=0.0, scale=DEFAULT_SCALE):
     """ Positive-only difference (0 below limit to difference above limit)
     
     Args:
-        value (int, float, ndarray): The value(s) to soft limit
+        x (int, float, ndarray): The value(s) to soft limit
         limit (float): The value to limit at
         scale: A scale factor for the softening
     
@@ -144,27 +144,27 @@ def posdiff(value, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_limit
     """
-    if isinstance(value, np.ndarray):
-        if value.size > 1 or not SCALARISE:
-            rel = (value - limit) / scale
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            rel = (x - limit) / scale
             clipped = np.minimum(rel, 700)
             out = np.log(1 + np.exp(clipped)) * scale
             filt = rel > 699
-            out[filt] = value[filt] - limit
+            out[filt] = x[filt] - limit
             return out
         else:
-            value = value.item()
-    rel = (value - limit) / scale
+            x = x.item()
+    rel = (x - limit) / scale
     if rel > 700:
-        return value - limit
+        return x - limit
     soft_plus = log(1 + exp(rel)) * scale
     return soft_plus
 
-def negdiff(value, limit=0.0, scale=DEFAULT_SCALE):
+def negdiff(x, limit=0.0, scale=DEFAULT_SCALE):
     """ Negative-only difference (difference below limit to 0 above limit)
     
     Args:
-        value (int, float, ndarray): The value(s) to soft limit
+        x (int, float, ndarray): The value(s) to soft limit
         limit (float): The value to limit at
         scale: A scale factor for the softening
     
@@ -175,27 +175,27 @@ def negdiff(value, limit=0.0, scale=DEFAULT_SCALE):
         soft_limit
     """
     
-    if isinstance(value, np.ndarray):
-        if value.size > 1 or not SCALARISE:
-            rel = -(value - limit) / scale
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            rel = -(x - limit) / scale
             clipped = np.minimum(rel, 700)
             out = np.log(1 + np.exp(clipped)) * scale
             filt = rel > 699
-            out[filt] = value[filt] - limit
+            out[filt] = x[filt] - limit
             return -out
         else:
-            value = value.item()
-    rel = -(value - limit) / scale
+            x = x.item()
+    rel = -(x - limit) / scale
     if rel > 700:
-        return value - limit
+        return x - limit
     soft_plus = log(1 + exp(rel)) * scale
     return -soft_plus
 
-def step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
+def step(x, limit=0.0, side=1, scale=DEFAULT_SCALE):
     """ A smooth step to prevent discontinuous gradient
     
     Args:
-        value (int, float, ndarray): The value(s)
+        x (int, float, ndarray): The value(s)
         limit (float): The value to step at
         side (int): 1 for min, -1 for max
         scale: A scale factor for the softening
@@ -208,22 +208,22 @@ def step(value, limit=0.0, side=1, scale=DEFAULT_SCALE):
         https://en.wikipedia.org/wiki/Sigmoid_function. Values for the
         calculation are clipped to avoid overflow errors.
     """
-    if isinstance(value, np.ndarray):
-        if value.size > 1 or not SCALARISE:
-            rel = (value - limit) / scale * side
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            rel = (x - limit) / scale * side
             clipped = np.maximum(rel, -700)
             return 1/(1 + np.exp(-clipped))
         else:
-            value = value.item()
-    rel = (value - limit) / scale * side
+            x = x.item()
+    rel = (x - limit) / scale * side
     clipped = max(rel, -700)
     return 1/(1 + exp(-clipped))
     
-def above(value, limit=0.0, scale=DEFAULT_SCALE):
+def above(x, limit=0.0, scale=DEFAULT_SCALE):
     """ A smooth step from 0 below a limit to 1 above it
     
     Args:
-        value (int, float, ndarray): The value(s)
+        x (int, float, ndarray): The value(s)
         limit (float): The value to step at
         scale: A scale factor for the softening
     
@@ -233,23 +233,23 @@ def above(value, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_step
     """
-    if isinstance(value, np.ndarray):
-        if value.size > 1 or not SCALARISE:
-            rel = (value - limit) / scale
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            rel = (x - limit) / scale
             clipped = np.maximum(rel, -700)
             return 1/(1 + np.exp(-clipped))
         else:
-            value = value.item()
-    rel = (value - limit) / scale
+            x = x.item()
+    rel = (x - limit) / scale
     clipped = max(rel, -700)
     return 1/(1 + exp(-clipped))
 
 
-def below(value, limit=0.0, scale=DEFAULT_SCALE):
+def below(x, limit=0.0, scale=DEFAULT_SCALE):
     """ A smooth step from 1 below a limit to 0 above it
     
     Args:
-        value (int, float, ndarray): The value(s)
+        x (int, float, ndarray): The value(s)
         limit (float): The value to step at
         scale: A scale factor for the softening
     
@@ -259,22 +259,22 @@ def below(value, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_step
     """
-    if isinstance(value, np.ndarray):
-        if value.size > 1 or not SCALARISE:
-            rel = -(value - limit) / scale
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            rel = -(x - limit) / scale
             clipped = np.maximum(rel, -700)
             return 1/(1 + np.exp(-clipped))
         else:
-            value = value.item()
-    rel = -(value - limit) / scale
+            x = x.item()
+    rel = -(x - limit) / scale
     clipped = max(rel, -700)
     return 1/(1 + exp(-clipped))
 
-def within(value, lower, upper, scale=DEFAULT_SCALE):
+def within(x, lower, upper, scale=DEFAULT_SCALE):
     """ Steps smoothly from 0 outside a range to 1 inside it
     
     Args:
-        value (int, float, ndarray): The value(s)
+        x (int, float, ndarray): The value(s)
         lower (float): The lower threshold
         upper (float): The upper threshold
         scale: A scale factor for the softening
@@ -285,15 +285,15 @@ def within(value, lower, upper, scale=DEFAULT_SCALE):
     See also:
         soft_step
     """
-    b = below(value, limit=upper, scale=scale)
-    a = above(value, limit=lower, scale=scale) 
+    b = below(x, limit=upper, scale=scale)
+    a = above(x, limit=lower, scale=scale) 
     return b * a
 
-def outside(value, lower, upper, scale=DEFAULT_SCALE):
+def outside(x, lower, upper, scale=DEFAULT_SCALE):
     """ Steps smoothly from 1 outside a range to 0 inside it
     
     Args:
-        value (int, float, ndarray): The value(s)
+        x (int, float, ndarray): The value(s)
         lower (float): The lower threshold
         upper (float): The upper threshold
         scale: A scale factor for the softening
@@ -304,15 +304,15 @@ def outside(value, lower, upper, scale=DEFAULT_SCALE):
     See also:
         soft_step
     """
-    b = below(value, limit=lower, scale=scale)
-    a = above(value, limit=upper, scale=scale) 
+    b = below(x, limit=lower, scale=scale)
+    a = above(x, limit=upper, scale=scale) 
     return b + a
 
-def sign(value, scale=DEFAULT_SCALE):
+def sign(x, scale=DEFAULT_SCALE):
     """ A smooth step from -1 below 0 to +1 above it
     
     Args:
-        value (int, float, ndarray): The value(s)
+        x (int, float, ndarray): The value(s)
         scale: A scale factor for the softening
     
     Returns:
@@ -323,11 +323,11 @@ def sign(value, scale=DEFAULT_SCALE):
         https://en.wikipedia.org/wiki/Sigmoid_function. Values for the
         calculation are clipped to avoid overflow errors.
     """
-    if isinstance(value, np.ndarray):
-        if value.size > 1 or not SCALARISE:
-            clipped = np.maximum(value / scale, -700)
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            clipped = np.maximum(x / scale, -700)
             return 2/(1 + np.exp(-clipped)) - 1
         else:
-            value = value.item()
-    clipped = max(value / scale, -700)
+            x = x.item()
+    clipped = max(x / scale, -700)
     return 2/(1 + exp(-clipped)) - 1
