@@ -19,9 +19,9 @@ def lim(x, limit=0.0, side=1, scale=DEFAULT_SCALE):
     
     Args:
         x (int, float, ndarray): The value(s) to soft limit
-        limit (float): The value to limit at
-        side (int): 1 for min, -1 for max
-        scale: A scale factor for the softening
+        limit (float): [OPTIONAL] The value to limit at. Defaults to 0.
+        side (int): [OPTIONAL] 1 for min, -1 for max. Defaults to 1.
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: The limited value(s)
@@ -54,8 +54,8 @@ def floor(x, limit=0.0, scale=DEFAULT_SCALE):
     
     Args:
         x (int, float, ndarray): The value(s) to soft limit
-        limit (float): The value to limit at
-        scale: A scale factor for the softening
+        limit (float): [OPTIONAL] The value to limit at. Defaults to 0.
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: The limited value(s)
@@ -85,8 +85,8 @@ def ceil(x, limit=0.0, scale=DEFAULT_SCALE):
     
     Args:
         x (int, float, ndarray): The value(s) to soft limit
-        limit (float): The value to limit at
-        scale: A scale factor for the softening
+        limit (float): [OPTIONAL] The value to limit at. Defaults to 0.
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: The limited value(s)
@@ -135,8 +135,8 @@ def posdiff(x, limit=0.0, scale=DEFAULT_SCALE):
     
     Args:
         x (int, float, ndarray): The value(s) to soft limit
-        limit (float): The value to limit at
-        scale: A scale factor for the softening
+        limit (float): [OPTIONAL] The value to limit at. Defaults to 0.
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: The limited value(s)
@@ -165,8 +165,8 @@ def negdiff(x, limit=0.0, scale=DEFAULT_SCALE):
     
     Args:
         x (int, float, ndarray): The value(s) to soft limit
-        limit (float): The value to limit at
-        scale: A scale factor for the softening
+        limit (float): [OPTIONAL] The value to limit at. Defaults to 0.
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: The limited value(s)
@@ -196,9 +196,9 @@ def step(x, limit=0.0, side=1, scale=DEFAULT_SCALE):
     
     Args:
         x (int, float, ndarray): The value(s)
-        limit (float): The value to step at
-        side (int): 1 for min, -1 for max
-        scale: A scale factor for the softening
+        limit (float): [OPTIONAL] The value to step at. Defaults to 0.
+        side (int): [OPTIONAL] 1 for min, -1 for max. Defaults to 1.
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: Value(s) between 0 and 1
@@ -224,8 +224,8 @@ def above(x, limit=0.0, scale=DEFAULT_SCALE):
     
     Args:
         x (int, float, ndarray): The value(s)
-        limit (float): The value to step at
-        scale: A scale factor for the softening
+        limit (float): [OPTIONAL] The value to step at. Defaults to 0.
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: Value(s) between 0 and 1
@@ -250,8 +250,8 @@ def below(x, limit=0.0, scale=DEFAULT_SCALE):
     
     Args:
         x (int, float, ndarray): The value(s)
-        limit (float): The value to step at
-        scale: A scale factor for the softening
+        limit (float): [OPTIONAL] The value to step at. Defaults to 0.
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: Value(s) between 0 and 1
@@ -277,7 +277,7 @@ def within(x, lower, upper, scale=DEFAULT_SCALE):
         x (int, float, ndarray): The value(s)
         lower (float): The lower threshold
         upper (float): The upper threshold
-        scale: A scale factor for the softening
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: Value(s) between 0 and 1
@@ -296,7 +296,7 @@ def outside(x, lower, upper, scale=DEFAULT_SCALE):
         x (int, float, ndarray): The value(s)
         lower (float): The lower threshold
         upper (float): The upper threshold
-        scale: A scale factor for the softening
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: Value(s) between 0 and 1
@@ -313,7 +313,7 @@ def sign(x, scale=DEFAULT_SCALE):
     
     Args:
         x (int, float, ndarray): The value(s)
-        scale: A scale factor for the softening
+        scale (float): [OPTIONAL] A scale factor for the softening
     
     Returns:
         float, ndarray: Value(s) between 0 and 1
@@ -331,3 +331,23 @@ def sign(x, scale=DEFAULT_SCALE):
             x = x.item()
     clipped = max(x / scale, -700)
     return 2/(1 + exp(-clipped)) - 1
+
+def gaussian(x, center=0.0, scale=DEFAULT_SCALE):
+    """ A gaussian function, with a peak of 1.0
+    
+    Args:
+        x (int, float, ndarray): The value(s)
+        center (float): [OPTIONAL] The x-position of the peak center
+        scale (float): [OPTIONAL] A scale factor for the curve.
+        
+    
+    """
+    if isinstance(x, np.ndarray):
+        if x.size > 1 or not SCALARISE:
+            clipped = np.maximum((x - center)**2 / scale, -700)
+            return np.exp(-clipped)
+        else:
+            x = x.item()
+    clipped = max((x - center)**2 / scale, -700)
+    return exp(-clipped)
+    

@@ -400,3 +400,35 @@ class Test_sign_numpy(Test_sign_scalar):
     def setUp(self):
         super().setUp()
         self.vals = np.array(self.vals)
+        
+        
+class Test_gaussian_scalar(unittest.TestCase):
+    def setUp(self):
+        self.vals = [-1000, 0.5, 1.5, 2.5, 1000]
+        self.center = 1.5
+       
+    def test_m1000(self):
+        val = soft.gaussian(self.vals[0], center=self.center, scale=0.5)
+        self.assertAlmostEqual(val, 0)
+
+    def test_p5(self):
+        val = soft.gaussian(self.vals[1], center=self.center, scale=0.5)
+        self.assertAlmostEqual(val, 0.1353352832366127)
+
+    def test_1p5(self):
+        val = soft.gaussian(self.vals[2], center=self.center, scale=0.5)
+        self.assertAlmostEqual(val, 1)
+
+    def test_2p5(self):
+        val = soft.gaussian(self.vals[3], center=self.center, scale=0.5)
+        self.assertAlmostEqual(val, 0.1353352832366127)
+
+    def test_1000(self):
+        val = soft.gaussian(self.vals[4], center=self.center, scale=0.5)
+        self.assertAlmostEqual(val, 0)
+
+
+class Test_gaussian_numpy(Test_gaussian_scalar):
+    def setUp(self):
+        super().setUp()
+        self.vals = np.array(self.vals)
