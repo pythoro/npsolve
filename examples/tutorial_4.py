@@ -12,13 +12,13 @@ values between classes.
 import numpy as np
 import matplotlib.pyplot as plt
 import npsolve
-
 from tutorial_2 import run
+
+G = np.array([0, -9.80665])
 
 import fastwire as fw
 wire_box = fw.get_wire_box('demo')
 
-G = np.array([0, -9.80665])
 
 class Slider(npsolve.Partial, fw.Wired):
     def __init__(self, freq=1.0, mass=1.0):
@@ -94,7 +94,6 @@ def plot_xs(dct):
     plt.ylabel('x')
     plt.legend(loc=3)
 
-
 def plot_trajectories(dct):
     plt.plot(dct['s_pos'][:,0], dct['s_pos'][:,1], label='slider')
     plt.plot(dct['p_pos'][:,0], dct['p_pos'][:,1], label='pendulum')
@@ -105,3 +104,8 @@ def plot_trajectories(dct):
     plt.gca().set_aspect('equal')
     plt.legend(loc=2)
 
+def execute(freq):
+    partials = [Slider(freq=freq), Pendulum()]
+    dct = run(partials, t_end=10.0, n=10001)
+    plot_xs(dct)
+    plot_trajectories(dct)
