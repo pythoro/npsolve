@@ -20,7 +20,8 @@ much easier to modify and maintain.
 ## Basic usage tutorial
 
 Let's use npsolve to do some integration through time, like you would to
-solve an ODE. Instead of equations, though, we're using class methods.
+solve an ODE. Instead of equations, though, we're using class methods. The
+code for all the tutorials is available in the repository under 'examples'.
 
 First, setup some classes that you want to do calculations with. We do this
 by using the `add_var` method to setup variables and their initial values.
@@ -65,9 +66,10 @@ class Component1(npsolve.Partial):
         self.add_var('velocity', init=0.3)
     
     def step(self, state_dct, t, *args):
-        ''' Called by the solver at each time step 
-        Calculate acceleration based on the 
-        '''
+        """ Called by the solver at each time step 
+        
+        Calculate acceleration based on the net force.
+        """
         acceleration = 1.0 * self.state['force']
         derivatives = {'position': self.velocity,
                        'velocity': acceleration}

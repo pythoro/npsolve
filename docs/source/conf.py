@@ -22,7 +22,7 @@ copyright = '2019, Reuben Rusk'
 author = 'Reuben Rusk'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.1.1'
 
 
 # -- General configuration ---------------------------------------------------
