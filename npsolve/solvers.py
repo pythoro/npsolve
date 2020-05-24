@@ -75,8 +75,8 @@ class Integrator(core.Solver):
     
     """
     def __init__(self,
-                 status=None,
-                 logger=None,
+                 status,
+                 logger,
                  framerate=60.0,
                  interface_cls=None,
                  integrator_name='lsoda',
