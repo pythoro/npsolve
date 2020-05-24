@@ -1,6 +1,10 @@
 Tutorials
 =========
 
+The fastest way to learn *npsolve* is to work through some simple examples.
+These short tutorials walk through some simple examples, to help learn how to
+use *npsolve*. 
+
 .. toctree::
    :maxdepth: 2
 
