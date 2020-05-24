@@ -47,9 +47,10 @@ internal `state` attribute instead. So, we'll add some more methods:
             self.add_var('velocity', init=0.3)
         
         def step(self, state_dct, t, *args):
-            ''' Called by the solver at each time step 
-            Calculate acceleration based on the 
-            '''
+            """ Called by the solver at each time step 
+            
+            Calculate acceleration based on the net force.
+            """
             acceleration = 1.0 * self.state['force']
             derivatives = {'position': self.state['velocity'],
                            'velocity': acceleration}

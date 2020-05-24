@@ -29,7 +29,7 @@ class Slider(npsolve.Partial, fw.Wired):
         self.add_var('s_vel', init=np.zeros(2))
     
     @wire_box.supply('pivot')
-    def pivot(self):
+    def pivot(self, t):
         """ The location of the pivot that connects to the pendulum """
         return self.state['s_pos'], self.state['s_vel']
 
@@ -63,7 +63,7 @@ class Pendulum(npsolve.Partial, fw.Wired):
     @npsolve.mono_cached()
     def F_pivot(self, t):
         """ Work out the force on the pendulum mass """
-        pivot_pos, pivot_vel = wire_box['pivot'].fetch()
+        pivot_pos, pivot_vel = wire_box['pivot'].fetch(t)
         rel_pos = pivot_pos - self.state['p_pos']
         rel_vel = pivot_vel - self.state['p_vel']
         dist = np.linalg.norm(rel_pos)
@@ -109,3 +109,10 @@ def execute(freq):
     dct = run(partials, t_end=10.0, n=10001)
     plot_xs(dct)
     plot_trajectories(dct)
+
+def plot_distance_check(dct):
+    diff = dct['p_pos'] - dct['s_pos']
+    dist = np.linalg.norm(diff, axis=1)
+    plt.plot(dct['time'], dist)
+    plt.xlabel('time')
+    plt.ylabel('length')

@@ -67,13 +67,14 @@ how we make the pivot location and velocity available to the Pendulum:
         # ...
         
         @wire_box.supply('pivot')
-        def pivot(self):
+        def pivot(self, t):
             """ The location of the pivot that connects to the pendulum """
             return self.state['s_pos'], self.state['s_vel']
         
 We decorate the method with `@wire_box.supply('pivot')` because we've
 called our wire box `wire_box`. This tells fastwire that this method
-supplies the values referred to by the wire called 'pivot'.
+supplies the values referred to by the wire called 'pivot'. We'll pass in
+the current time, `t`, although we don't need it yet.
 
 Let's set up a method to create the excitation force:
 
@@ -142,7 +143,7 @@ Slider and the position of the Pendulum.
         @npsolve.mono_cached()
         def F_pivot(self, t):
             """ Work out the force on the pendulum mass """
-            pivot_pos, pivot_vel = wire_box['pivot'].fetch()
+            pivot_pos, pivot_vel = wire_box['pivot'].fetch(t)
             rel_pos = pivot_pos - self.state['p_pos']
             rel_vel = pivot_vel - self.state['p_vel']
             dist = np.linalg.norm(rel_pos)
@@ -266,4 +267,25 @@ When we look a the trajectories, we see what's really happening...
     :width: 600
 
 
+Remember that our pendulum isn't quite a rigid body - we've approximated it
+as a very stiff, highly damped spring. We should check that the approximation 
+is good by checking that the distance between the pivot and pendulum is
+very very close to 1.0. Let's plot the distance:
 
+:: 
+
+    def plot_distance_check(dct):
+        diff = dct['p_pos'] - dct['s_pos']
+        dist = np.linalg.norm(diff, axis=1)
+        plt.plot(dct['time'], dist)
+        plt.xlabel('time')
+        plt.ylabel('length')
+    
+    plot_distance_check(dct)
+
+
+.. image:: ../../examples/tutorial_4_distance_check.png
+    :width: 600
+
+Our maximum length error is only 0.0001, compared to our pendulum length of 
+1.0, so we know the errors due to that approximation will be small.
