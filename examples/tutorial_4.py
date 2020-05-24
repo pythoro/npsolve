@@ -25,27 +25,25 @@ class Slider(npsolve.Partial, fw.Wired):
         super().__init__() # Don't forget to call this!
         self.freq = freq
         self.mass = mass
-        self.add_var('s_pos', init=0)
-        self.add_var('s_vel', init=0)
+        self.add_var('s_pos', init=np.zeros(2))
+        self.add_var('s_vel', init=np.zeros(2))
     
     @wire_box.supply('pivot')
     def pivot(self):
-        pos = np.array([self.state['s_pos'], 0])
-        vel = np.array([self.state['s_vel'], 0])
-        return pos, vel
+        """ The location of the pivot that connects to the pendulum """
+        return self.state['s_pos'], self.state['s_vel']
 
     def F_sinusoid(self, t):
+        """ The force to make the system do something """
         return 10 * np.cos(2 * np.pi * (self.freq * t))
 
     def step(self, state_dct, t, *args):
-        ''' Called by the solver at each time step 
-        Calculate acceleration based on the 
-        '''
+        """ Called by the solver at each time step  """
         F_pivot = -wire_box['F_pivot'].fetch(t)
         F_pivot_x = F_pivot[0]
-        F_sinusoid = self.F_sinusoid(t)
-        F_net = F_pivot_x + F_sinusoid
-        acc = F_net / self.mass
+        F_sinusoid_x = self.F_sinusoid(t)
+        F_net_x = F_pivot_x + F_sinusoid_x
+        acc = np.array([F_net_x / self.mass, 0])
         derivatives = {'s_pos': state_dct['s_vel'],
                        's_vel': acc}
         return derivatives
@@ -90,7 +88,7 @@ class Pendulum(npsolve.Partial, fw.Wired):
 
 
 def plot_xs(dct):
-    plt.plot(dct['time'], dct['s_pos'], label='slider')
+    plt.plot(dct['time'], dct['s_pos'][:,0], label='slider')
     plt.plot(dct['time'], dct['p_pos'][:,0], label='pendulum')
     plt.xlabel('time')
     plt.ylabel('x')
@@ -98,7 +96,7 @@ def plot_xs(dct):
 
 
 def plot_trajectories(dct):
-    plt.plot(dct['s_pos'], np.zeros_like(dct['s_pos']), label='slider')
+    plt.plot(dct['s_pos'][:,0], dct['s_pos'][:,1], label='slider')
     plt.plot(dct['p_pos'][:,0], dct['p_pos'][:,1], label='pendulum')
     plt.xlabel('x')
     plt.ylabel('y')
