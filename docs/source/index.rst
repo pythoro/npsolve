@@ -33,6 +33,7 @@ much easier to modify and maintain.
 
    tutorials
    package
+   related
 
 Indices and tables
 ==================
