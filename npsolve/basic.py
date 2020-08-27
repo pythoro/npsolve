@@ -11,6 +11,17 @@ A lightweight module for simplified array index management.
 import numpy as np
 
 class V_Set():
+    """ A class that helps manage indices for array operations 
+    
+    Args:
+        names (str, list): A single name, a series of names separated by
+            spaces, or a list of names.
+        sizes (list): [Optional] A list of integers indicating how many
+            values need to be allocated for each name. Defaults to 1 for
+            all names.
+
+    """
+    
     def __init__(self, names=None, sizes=None):
         self._dct = {}
         self._n = 0
@@ -20,6 +31,12 @@ class V_Set():
     def add(self, names, sizes=None):
         """ Add another variable to the set 
         
+        Args:
+            names (str, list): A single name, a series of names separated by
+                spaces, or a list of names.
+            sizes (list): [Optional] A list of integers indicating how many
+                values need to be allocated for each name. Defaults to 1 for
+                all names.
         
         """
         if isinstance(names, str):
@@ -64,6 +81,20 @@ class V_Set():
         return self.ind(name)
             
     def array(self, dct=None, **kwargs):
+        """ Assemble values for each variable into a 1d array 
+        
+        Args:
+            dct (dict): [Optional] A dictionary of values for all names.
+            **kwargs: Optional name-value keyword arguments, which can be
+                used instead of the dct argument.
+        
+        Returns:
+            ndarray: A 1d numpy array.
+        
+        This method puts thge values in the right places within the
+        array.
+        
+        """
         try:
             dct = kwargs if dct is None else dct
             return np.hstack([dct[n] for n in self._dct.keys()])
