@@ -25,8 +25,10 @@ class V_Set():
     def __init__(self, names=None, sizes=None):
         self._dct = {}
         self._n = 0
+        self._locked = False
         if names is not None:
             self.add(names, sizes)
+            self.lock()
     
     def add(self, names, sizes=None):
         """ Add another variable to the set 
@@ -39,8 +41,12 @@ class V_Set():
                 all names.
         
         """
+        if self._locked:
+            raise RuntimeError('Set is locked and cannot be added to.')
         if isinstance(names, str):
             names = names.split(' ')
+        if len(names) == 1 and isinstance(sizes, int):
+            sizes = [sizes]
         sizes = [1] * len(names) if sizes is None else sizes
         for name, size in zip(names, sizes):
             if name not in self._dct:
@@ -51,7 +57,10 @@ class V_Set():
                 self._n += size
             else:
                 ValueError(name, 'already exists in the set.')
-                
+               
+    def lock(self) :
+        self._locked = True
+               
     def ind(self, names=None):
         """ Return indices or slices corresponding to variable names 
         

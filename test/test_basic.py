@@ -71,3 +71,18 @@ class Test_Basic(unittest.TestCase):
         vs = self.test_add_str_sizes()
         arr = vs.array(a=3, b=[5, 7, 9])
         self.assertTrue(np.array_equal(arr, np.array([3, 5, 7, 9])))
+
+    def test_lock_on_init(self):
+        vs = basic.V_Set('a b')
+        self.assertTrue(vs._locked)
+
+    def test_lock(self):
+        vs = self.test_add_str()
+        vs.lock()
+        self.assertTrue(vs._locked)
+        return vs
+    
+    def test_lock_error(self):
+        vs = self.test_lock()
+        with self.assertRaises(RuntimeError) as context:
+            vs.add('c')
