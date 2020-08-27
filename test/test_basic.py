@@ -67,9 +67,14 @@ class Test_Basic(unittest.TestCase):
         arr = vs.array({'a': 3, 'b': 5})
         self.assertTrue(np.array_equal(arr, np.array([3, 5])))
         
-    def test_array_vecotrs_kwargs(self):
+    def test_array_vectors_kwargs(self):
         vs = self.test_add_str_sizes()
         arr = vs.array(a=3, b=[5, 7, 9])
+        self.assertTrue(np.array_equal(arr, np.array([3, 5, 7, 9])))
+
+    def test_array_vectors_ndarray(self):
+        vs = self.test_add_str_sizes()
+        arr = vs.array(a=3, b=np.array([5, 7, 9]))
         self.assertTrue(np.array_equal(arr, np.array([3, 5, 7, 9])))
 
     def test_lock_on_init(self):
