@@ -110,6 +110,24 @@ class V_Set():
         except KeyError as e:
             raise ValueError('Value not provided for required key: ' + str(e))
 
+    def unpack(self, array, names):
+        """ Unpack a 1d array into named variables
+        
+        Args:
+            array (ndarray): A 1d numpy array.
+            names (str, list): A single name, a series of names separated by
+                spaces, or a list of names.
+        
+        Returns:
+            list: The values corresponding to the list of names.
+        
+        This method puts thge values in the right places within the
+        array.
+        
+        """
+        names = names.split(' ') if isinstance(names, str) else names
+        return [array[self._dct[n]] for n in names]
+
     def __str__(self):
         return ', '.join(self._dct.keys())
     

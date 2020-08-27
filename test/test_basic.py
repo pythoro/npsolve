@@ -91,3 +91,16 @@ class Test_Basic(unittest.TestCase):
         vs = self.test_lock()
         with self.assertRaises(RuntimeError) as context:
             vs.add('c')
+
+    def test_unpack(self):
+        vs = self.test_add_str_sizes()
+        a, b = vs.unpack(np.array([3, 5, 7, 9]), 'a b')
+        self.assertEqual(a, 3)
+        self.assertTrue(np.array_equal(b, np.array([5, 7, 9])))
+
+    def test_unpack_2(self):
+        vs = self.test_add_str_sizes()
+        b, a = vs.unpack(np.array([3, 5, 7, 9]), 'b a')
+        self.assertEqual(a, 3)
+        self.assertTrue(np.array_equal(b, np.array([5, 7, 9])))
+        
