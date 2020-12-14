@@ -103,4 +103,27 @@ class Test_Basic(unittest.TestCase):
         b, a = vs.unpack(np.array([3, 5, 7, 9]), 'b a')
         self.assertEqual(a, 3)
         self.assertTrue(np.array_equal(b, np.array([5, 7, 9])))
+
+    def test_unpack_array_rows(self):
+        vs = self.test_add_str_sizes()
+        b, a = vs.unpack(np.array([[3, 5, 7, 9], [3, 5, 7, 9]]).T, 'b a')
+        self.assertTrue(np.array_equal(a, np.array([3, 3])))
+        self.assertTrue(np.array_equal(b, np.array([[5, 7, 9],
+                                                    [5, 7, 9]]).T))
         
+    def test_unpack_array_cols(self):
+        vs = self.test_add_str_sizes()
+        b, a = vs.unpack(np.array([[3, 5, 7, 9], [3, 5, 7, 9]]), 'b a',
+                         by='cols')
+        self.assertTrue(np.array_equal(a, np.array([3, 3])))
+        self.assertTrue(np.array_equal(b, np.array([[5, 7, 9],
+                                                    [5, 7, 9]])))
+
+    def test_to_dict(self):
+        vs = self.test_add_str_sizes()
+        d = vs.to_dict(np.array([[3, 5, 7, 9], [3, 5, 7, 9]]), 'b a',
+                         by='cols')
+        print(d)
+        self.assertTrue(np.array_equal(d['a'], np.array([3, 3])))
+        self.assertTrue(np.array_equal(d['b'], np.array([[5, 7, 9],
+                                                    [5, 7, 9]])))

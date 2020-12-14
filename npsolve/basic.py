@@ -110,26 +110,40 @@ class V_Set():
         except KeyError as e:
             raise ValueError('Value not provided for required key: ' + str(e))
 
-    def unpack(self, array, names):
+    def unpack(self, array, names=None, by='rows'):
         """ Unpack a 1d array into named variables
         
         Args:
-            array (ndarray): A 1d numpy array.
+            array (ndarray): A numpy array.
             names (str, list): A single name, a series of names separated by
                 spaces, or a list of names.
+            by (str): Either 'rows' or 'cols' when the array is 2d.
         
         Returns:
             list: The values corresponding to the list of names.
         
-        This method puts thge values in the right places within the
+        This method puts the values in the right places within the
         array.
         
         """
+        names = list(self._dct.keys()) if names is None else names
         names = names.split(' ') if isinstance(names, str) else names
-        return [array[self._dct[n]] for n in names]
+        if array.ndim > 1 and by == 'cols':
+            array = array.T
+        ret = [array[self._dct[n]] for n in names]
+        if array.ndim > 1 and by == 'cols':
+            ret = [a.T for a in ret]
+        return ret
 
     def __str__(self):
         return ', '.join(self._dct.keys())
     
     def __repr__(self):
         return "V_Set: " + ', '.join(self._dct.keys())
+    
+    def to_dict(self, array, names=None, by='rows'):
+        names = list(self._dct.keys()) if names is None else names
+        names = names.split(' ') if isinstance(names, str) else names
+        lst = self.unpack(array, names, by=by)
+        return {n: v for n, v in zip(names, lst)}
+        
