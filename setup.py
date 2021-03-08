@@ -14,7 +14,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name="npsolve",
-    version="0.1.1",
+    version="0.1.2",
     author="Reuben Rusk",
     author_email="pythoro@mindquip.com",
     description="Easier object-oriented calculations for numerical solvers.",
