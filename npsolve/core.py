@@ -111,6 +111,14 @@ class Partial():
         '''
         self.npsolve_vars[name]['init'] = np.atleast_1d(init)
 
+    def get_init(self, name):
+        """ Get the initial value for a variable 
+        
+        Args:
+            name (str): The variable name
+        """
+        return self.npsolve_vars[name]['init']
+
     def add_var(self, name, init, safe=True, live=True, **kwargs):
         ''' Add a new variable 
         
