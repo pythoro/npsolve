@@ -14,32 +14,32 @@ import npsolve
 class Component1(npsolve.Partial):
     def __init__(self):
         super().__init__() # Don't forget to call this!
-        self.add_var('position', init=0.1)
-        self.add_var('velocity', init=0.3)
+        self.add_var('position1', init=0.1)
+        self.add_var('velocity1', init=0.3)
     
     def step(self, state_dct, t, *args):
         """ Called by the solver at each time step 
         
-        Calculate acceleration based on the net force.
+        Calculate acceleration based on the net component2_value.
         """
-        acceleration = 1.0 * self.state['force']
-        derivatives = {'position': self.state['velocity'],
-                       'velocity': acceleration}
+        acceleration = 1.0 * self.state['component2_value']
+        derivatives = {'position1': self.state['velocity1'],
+                       'velocity1': acceleration}
         return derivatives
 
 
 class Component2(npsolve.Partial):
     def __init__(self):
         super().__init__()  # Don't forget to call this!
-        self.add_var('force', init=-0.1)
+        self.add_var('component2_value', init=-0.1)
 
     def calculate(self, t):
         ''' Some arbitrary calculations based on current time t
         and the position at that time calculated in Component1.
         This returns a derivative for variable 'c'
         '''
-        dc = 1.0 * np.cos(2*t) * self.state['position']
-        derivatives = {'force': dc}
+        dc = 1.0 * np.cos(2*t) * self.state['position1']
+        derivatives = {'component2_value': dc}
         return derivatives
     
     def step(self, state_dct, t, *args):
@@ -71,7 +71,7 @@ import matplotlib.pyplot as plt
 def plot(res, s):
     slices = s.npsolve_slices
     
-    plt.plot(s.t_vec, res[:,slices['position']], label='position')
-    plt.plot(s.t_vec, res[:,slices['velocity']], label='velocity')
-    plt.plot(s.t_vec, res[:,slices['force']], label='force')
+    plt.plot(s.t_vec, res[:,slices['position1']], label='position1')
+    plt.plot(s.t_vec, res[:,slices['velocity1']], label='velocity1')
+    plt.plot(s.t_vec, res[:,slices['component2_value']], label='component2_value')
     plt.legend()
