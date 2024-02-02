@@ -21,13 +21,13 @@ logger = npsolve.get_list_container("demo_logger")
 status = npsolve.get_dict("demo_status")
 
 
-class Component1(fw.Wired, npsolve.Partial):
+class Component1(npsolve.Partial):
     def __init__(self):
         super().__init__()  # Don't forget to call this!
         self.add_var("position1", init=0.1)
         self.add_var("velocity1", init=0.3)
-
-    @wire_box.supply("demo_wire")
+        wire_box['demo_wire'].connect(self.get_force)
+    
     def get_force(self):
         F = (
             -1 * (self.state["position1"] - 1.0)
@@ -57,14 +57,14 @@ class Component2(fw.Wired, npsolve.Partial):
         super().__init__()  # Don't forget to call this!
         self.add_var("position2", init=0.0)
         self.add_var("velocity2", init=0.0)
+        self._wire = wire_box["demo_wire"]
 
     def calculate(self, t):
         """Some arbitrary calculations based on current time t
         and the position at that time calculated in Component1.
         This returns a derivative for variable 'position2'
         """
-        wire = wire_box["demo_wire"]
-        force = -wire.fetch()  # Negative for reaction force
+        force = -self._wire.fetch()  # Negative for reaction force
         if status[FINAL]:
             logger["c2_force"].append(force)
         derivatives = {
