@@ -4,7 +4,7 @@ Created on Mon Aug  5 14:34:54 2019
 
 @author: Reuben
 
-Npsolve has a simple, small core built on fastwire. It's designed to give
+Npsolve has a simple, small core. It's designed to give
 good flexibility without compromising on performance.
 
 """
@@ -12,8 +12,6 @@ good flexibility without compromising on performance.
 import numpy as np
 import traceback
 import typing
-
-from contextlib import contextmanager
 
 
 class Partial:

@@ -40,5 +40,5 @@ setuptools.setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering",
     ],
-    install_requires=['numpy', 'fastwire'],
+    install_requires=['numpy'],
 )
