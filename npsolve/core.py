@@ -240,32 +240,6 @@ class Solver:
         for partial in self._partials:
             partial._set_state(state=self.npsolve_state_dct)
 
-    def freeze(self):
-        """Give static copies of vectors to connected Partial instances
-
-        Warning:
-            This will prevent the 'step' methods from being able to update
-            the values.
-        """
-        state_dct, ret_dct = self._make_dcts(
-            self.npsolve_slices,
-            self.npsolve_state.copy(),
-            self.npsolve_ret.copy(),
-        )
-        for partial in self._partials:
-            partial.set_vectors(state_dct=state_dct, ret_dct=ret_dct)
-        return self.npsolve_state.copy()
-
-    def unfreeze(self, state=None):
-        """Give 'live' vectors to connected Partial instances
-
-        Args:
-            state (ndarray): An optional vector to initialise the state.
-        """
-        if state is not None:
-            self.npsolve_state[:] = state
-        self._emit_vectors()
-
     def _fetch_step_methods(self):
         lst = [partial._get_step_methods() for partial in self._partials]
         out = []
