@@ -11,6 +11,7 @@ good flexibility without compromising on performance.
 
 import numpy as np
 import traceback
+import typing
 
 from contextlib import contextmanager
 
@@ -30,11 +31,11 @@ class Partial:
         self.__cache_clear_functions = self._get_cache_clear_functions()
         self.cache_clear()  # Useful for iPython console autoreload.
 
-    def connect_solver(self, solver):
-        """ Register connection with the solver """
+    def connect_solver(self, solver: "Solver") -> None:
+        """Register connection with the solver"""
         solver.connect_partial(self)
 
-    def set_vectors(self, state_dct, ret_dct):
+    def set_vectors(self, state_dct: dict, ret_dct: dict) -> None:
         """Override to set up views of the state vector
 
         Args:
@@ -45,7 +46,7 @@ class Partial:
         """
         pass
 
-    def _set_state(self, state):
+    def _set_state(self, state: dict) -> None:
         """Set the state dictionary
 
         Args:
@@ -56,18 +57,21 @@ class Partial:
         """
         self.state = state
 
-    def _get_vars(self):
+    def _get_vars(self) -> dict:
         return self.npsolve_vars
 
-    def set_meta(self, name, **kwargs):
+    def set_meta(self, name: str, **kwargs) -> None:
         """Set meta information for a variable
 
         Args:
+            name (str): The name of the variable.
             **kwargs: Key word attributes for the variable.
         """
         self.npsolve_vars[name].update(kwargs)
 
-    def set_init(self, name, init):
+    def set_init(
+        self, name: str, init: typing.Union[float, int, np.ndarray]
+    ) -> None:
         """Set the initial value for a variable
 
         Args:
@@ -77,7 +81,7 @@ class Partial:
         """
         self.npsolve_vars[name]["init"] = np.atleast_1d(init)
 
-    def get_init(self, name):
+    def get_init(self, name: str) -> typing.Union[float, int, np.ndarray]:
         """Get the initial value for a variable
 
         Args:
@@ -85,13 +89,23 @@ class Partial:
         """
         return self.npsolve_vars[name]["init"]
 
-    def add_var(self, name, init, safe=True, live=True, **kwargs):
+    def add_var(
+        self,
+        name: str,
+        init: typing.Union[float, int, np.ndarray],
+        safe: bool = True,
+        live: bool = True,
+        **kwargs
+    ) -> None:
         """Add a new variable
 
         Args:
             name (str): The variable name
             init (array-like): The initial value(s). Can be a scalar or 1D
                 ndarray.
+            safe (bool): If true, ensures that variable name does not already
+                exist.
+            live (bool): Deprecated. Always true.
             **kwargs: Optional kew word attributes for the variable.
         """
         if safe and name in self.npsolve_vars:
@@ -102,10 +116,10 @@ class Partial:
             self.set_init(name, init)
             self.set_meta(name, **kwargs)
 
-    def clear_vars(self):
+    def clear_vars(self) -> None:
         self.npsolve_vars = {}
 
-    def add_vars(self, dct):
+    def add_vars(self, dct: dict) -> None:
         """Add multiple variables
 
         Args:
@@ -115,7 +129,7 @@ class Partial:
         for name, d in dct.items():
             self.add_var(name, **d)
 
-    def _get_cached_methods(self):
+    def _get_cached_methods(self) -> list[typing.Callable]:
         """Return a list of the cached methods
 
         Note:
@@ -133,7 +147,7 @@ class Partial:
                 functions.append(func)
         return functions
 
-    def _get_cache_clear_functions(self):
+    def _get_cache_clear_functions(self) -> list[typing.Callable]:
         """Get the cache_clear functions for cached methods
 
         Returns:
@@ -141,25 +155,33 @@ class Partial:
         """
         return [func.cache_clear for func in self.__cache_methods]
 
-    def cache_clear(self):
+    def cache_clear(self) -> None:
         """Clear the cache for all cached methods"""
         [f() for f in self.__cache_clear_functions]
 
-    def _set_caching(self, enable):
+    def _set_caching(self, enable: bool) -> None:
         """Enable / disable caching in cached methods"""
         [f.set_caching(enable) for f in self.__cache_methods]
 
-    def _get_step_methods(self):
+    def _get_step_method(self) -> typing.Callable:
         """Return the step method"""
         return self.step
 
-    def step(self, state_dct, *args):
+    def step(self, state_dct: dict, *args) -> dict:
+        """Takes the current state and returns a dictionary.
+
+        The dictionary should contain keys for each of the variables
+        declared in the instance, and each value is usually a derivative.
+        """
         raise NotImplementedError("The step method must be implemented.")
-        # return dict with key and return values.
 
     def enable_caching(self):
-        """Enable or"""
-        [f.cache_enable() for f in self._get_cached_methods()]
+        """Enable caching"""
+        self._set_caching(enable=True)
+
+    def disable_caching(self):
+        """Enable caching"""
+        self._set_caching(enable=False)
 
 
 class Solver:
@@ -171,7 +193,7 @@ class Solver:
         self.state = {}
         self._partials = []
 
-    def _setup_vecs(self, dct):
+    def _setup_vecs(self, dct: dict) -> (dict, np.ndarray, np.ndarray):
         """Create vectors and slices based on a dictionary of variables
 
         Args:
@@ -199,7 +221,9 @@ class Solver:
         ret = np.zeros(i)
         return slices, state, ret
 
-    def _make_dcts(self, slices, state, ret):
+    def _make_dcts(
+        self, slices: dict, state: np.ndarray, ret: np.ndarray
+    ) -> (dict, dict):
         """Create dictionaries of numpy views for all variables"""
         state_dct = {}
         ret_dct = {}
@@ -212,7 +236,7 @@ class Solver:
             ret_dct[name] = ret_view
         return state_dct, ret_dct
 
-    def _fetch_vars(self):
+    def _fetch_vars(self) -> dict:
         """Collect variable data from connected Partial instances"""
         dct = {}
         dicts = [partial._get_vars() for partial in self._partials]
@@ -228,20 +252,20 @@ class Solver:
             dct.update(d)
         return dct
 
-    def _emit_vectors(self):
+    def _emit_vectors(self) -> None:
         """Pass out vectors and slices to connected Partial instances"""
         for partial in self._partials:
             partial.set_vectors(
                 state_dct=self.npsolve_state_dct, ret_dct=self.npsolve_ret_dct
             )
 
-    def _emit_state(self):
+    def _emit_state(self) -> None:
         """Pass out vectors and slices to connected Partial instances"""
         for partial in self._partials:
             partial._set_state(state=self.npsolve_state_dct)
 
-    def _fetch_step_methods(self):
-        lst = [partial._get_step_methods() for partial in self._partials]
+    def _fetch_step_methods(self) -> list[typing.Callable]:
+        lst = [partial._get_step_method() for partial in self._partials]
         out = []
         for ret in lst:
             if isinstance(ret, list):
@@ -250,11 +274,11 @@ class Solver:
                 out.append(ret)
         return out
 
-    def fetch_partials(self):
+    def fetch_partials(self) -> list[Partial]:
         """Fetch a dictionary of all connected Partial instances"""
         return {partial.npsolve_name: partial for partial in self._partials}
 
-    def _fetch_cache_clears(self):
+    def _fetch_cache_clears(self) -> list[typing.Callable]:
         lst = [
             partial._get_cache_clear_functions() for partial in self._partials
         ]
@@ -263,9 +287,8 @@ class Solver:
             out.extend(l)
         return out
 
-    def npsolve_init(self):
-        """Initialise the Partials and be ready to solve
-        """
+    def npsolve_init(self) -> None:
+        """Initialise the Partials and be ready to solve"""
         dct = self._fetch_vars()
         slices, state, ret = self._setup_vecs(dct)
         state_dct, ret_dct = self._make_dcts(slices, state, ret)
@@ -283,12 +306,12 @@ class Solver:
         for partial in self._partials:
             partial._set_caching(enable=True)
 
-    def npsolve_finish(self):
+    def npsolve_finish(self) -> None:
         """Tidy up after a round of solving"""
         for partial in self._partials:
             partial._set_caching(enable=True)
 
-    def one_way_step(self, vec, *args, **kwargs):
+    def one_way_step(self, vec: np.ndarray, *args, **kwargs) -> None:
         """The method to be called every iteration with no return val
 
         Args:
@@ -309,7 +332,7 @@ class Solver:
         for step in self._step_methods:
             step(state_dct, *args, **kwargs)
 
-    def step(self, vec, *args, **kwargs):
+    def step(self, vec: np.ndarray, *args, **kwargs) -> np.ndarray:
         """The method to be called every iteration by the numerical solver
 
         Args:
@@ -318,10 +341,9 @@ class Solver:
             kwargs: Optional keyword arguments for each step method call.
 
         Returns:
-            dict: A dictionary containing keys for each variable. The values
-                must match the shape of the state. These will often contain
-                derivatives for integration problems and error or cost values
-                for optimisation problems.
+            np.ndarray: A vector passed back to the solver. This will often
+            contain derivatives for integration problems and error or cost
+            values for optimisation problems.
 
         """
         self.npsolve_state[:] = vec
@@ -334,7 +356,7 @@ class Solver:
                 ret_dct[name][:] = val
         return self.npsolve_ret
 
-    def tstep(self, t, vec, *args, **kwargs):
+    def tstep(self, t: float, vec: np.ndarray, *args, **kwargs) -> np.ndarray:
         """The method to be called every iteration by the numerical solver
 
         Args:
@@ -373,7 +395,7 @@ class Solver:
                 ret_dct[name][:] = val
         return self.npsolve_ret
 
-    def as_dct(self, sol):
+    def as_dct(self, sol: np.ndarray) -> dict[str, np.array]:
         """Split out solution array into dictionary of values
 
         Args:
@@ -392,7 +414,13 @@ class Solver:
                 d[key] = sol[:, slc]
         return d
 
-    def get_state_dct(self, squeeze=True, unitise=True):
+    def get_state_dct(self, squeeze=True, unitise=True) -> dict:
+        """Return the current state dictionary
+
+        Args:
+            squeeze (bool): Squeeze np.ndarrays to minimal dimensions.
+            unitize (bool): Convert size-1 np.ndarrays to python floats.
+        """
         dct = self.npsolve_state_dct.copy()
         if squeeze:
             for k in dct.keys():
@@ -404,11 +432,11 @@ class Solver:
                     dct[k] = v.item()
         return dct
 
-    def connect_partial(self, partial):
+    def connect_partial(self, partial: Partial) -> None:
         """Connect a Partial instance"""
         self._partials.append(partial)
 
-    def connect_partials(self, partials):
+    def connect_partials(self, partials: list[Partial]) -> None:
         """Connect a dict or list of partials to the Solver instance
 
         Args:

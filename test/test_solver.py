@@ -105,7 +105,7 @@ class Test_Solver(unittest.TestCase):
             def step(self, state_dct, *args):
                 pass
             
-            def _get_step_methods(self):
+            def _get_step_method(self):
                 return self.step
         
         p_a = MockPartial()

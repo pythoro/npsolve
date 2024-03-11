@@ -99,7 +99,7 @@ class Test_Partial(unittest.TestCase):
 
     def test_fetch_step(self):
         p, state, ret, state_dct, ret_dct = make_partial()
-        p_step = p._get_step_methods()
+        p_step = p._get_step_method()
         self.assertEqual(p_step, p.step)
         
     def test_step(self):
