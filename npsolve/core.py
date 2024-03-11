@@ -434,7 +434,7 @@ class Solver:
         """Connect a Partial instance"""
         self._partials.append(partial)
 
-    def connect_to(self, partials):
+    def connect_partials(self, partials):
         """Connect a dict or list of partials to the Solver instance
 
         Args:
