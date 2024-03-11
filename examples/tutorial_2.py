@@ -68,7 +68,8 @@ class Solver(npsolve.Solver):
         return dct
 
 
-def run(partials, t_end=3.0, n=100001):
+def run(t_end=3.0, n=100001):
+    partials = [Ball()]
     solver = Solver()
     solver.connect(partials)
     return solver.solve(t_end=t_end, n=n)

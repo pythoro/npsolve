@@ -4,23 +4,20 @@ Created on Sun May 24 07:23:55 2020
 
 @author: Reuben
 
-This example for Tutorial 4 illustrates how to use fastwire to pass
-values between classes.
+This example for Tutorial 4 illustrates how to set initial conditions.
 
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-from tutorial_2 import run as t2_run
 from tutorial_3 import Particle
-from tutorial_4 import Pendulum
+from tutorial_4 import Pendulum, Solver
 import fastwire as fw
 wire_box = fw.get_wire_box('demo')
 
 
 class Particle2(Particle, fw.Wired):
-    
-    @wire_box.supply('pivot')
+        
     def pivot(self, t):
         velocity = np.array([self.xts(t, der=1), self.yts(t, der=1)])
         return self.state['position'], velocity
@@ -31,13 +28,15 @@ def set_init_condition(particle, pendulum):
     init_pendulum_pos = init_particle_pos - np.array([0.0, 1.0])
     pendulum.set_init('p_pos', init_pendulum_pos)
 
-def run(k=1e6, c=1e4):
+def run(k=1e6, c=1e4, t_end=1.0, n=100001):
     particle = Particle2()
     pendulum = Pendulum(k=k, c=c)
+    pendulum.connect_to_slider(particle)
     set_init_condition(particle, pendulum)
     partials = [particle, pendulum]
-    dct = t2_run(partials, t_end=1.0, n=10001)
-    return dct
+    solver = Solver()
+    solver.connect(partials)
+    return solver.solve(t_end=t_end, n=n)
 
 
 def plot_trajectories(dct):

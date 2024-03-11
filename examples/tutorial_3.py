@@ -9,12 +9,11 @@ This example for Tutorial 3 illustrates how to use the Timeseries class.
 """
 
 import numpy as np
+from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
 import npsolve
 from npsolve.utils import Timeseries
-
-from tutorial_2 import run
 
 
 class Particle(npsolve.Partial):
@@ -34,6 +33,23 @@ class Particle(npsolve.Partial):
         velocity = np.array([self.xts(t, der=1), self.yts(t, der=1)])
         derivatives = {'position': velocity}
         return derivatives
+
+
+class Solver(npsolve.Solver):
+    def solve(self, t_end=3.0, n=100001):
+        self.npsolve_init() # Initialise
+        t_vec = np.linspace(0, t_end, n)
+        solution = odeint(self.step, self.npsolve_initial_values, t_vec)
+        dct = self.as_dct(solution)
+        dct['time'] = t_vec
+        return dct
+
+
+def run(t_end=3.0, n=100001):
+    partials = [Particle()]
+    solver = Solver()
+    solver.connect(partials)
+    return solver.solve(t_end=t_end, n=n)
 
 
 def plot(dct, particle):
