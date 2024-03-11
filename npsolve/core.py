@@ -167,7 +167,6 @@ class Solver:
 
     def __init__(self):
         self._cache_clear_functions = []
-        self.npsolve_isolate = None  # Deprecated
         self._container = None
         self.state = {}
         self._partials = []
@@ -386,11 +385,7 @@ class Solver:
             f()
         for step in self._step_methods:
             for name, val in step(state_dct, *args, **kwargs).items():
-                if self.npsolve_isolate is None:
-                    ret_dct[name][:] = val
-                else:
-                    if name in self.npsolve_isolate:
-                        ret_dct[name][:] = val
+                ret_dct[name][:] = val
         return self.npsolve_ret
 
     def tstep(self, t, vec, *args, **kwargs):
@@ -429,11 +424,7 @@ class Solver:
                     + "derivatives."
                 )
             for name, val in ret.items():
-                if self.npsolve_isolate is None:
-                    ret_dct[name][:] = val
-                else:
-                    if name in self.npsolve_isolate:
-                        ret_dct[name][:] = val
+                ret_dct[name][:] = val
         return self.npsolve_ret
 
     def as_dct(self, sol):
