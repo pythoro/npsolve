@@ -171,15 +171,13 @@ class Solver:
         self.state = {}
         self._partials = []
 
-    def _setup_vecs(self, dct, pinned=None):
+    def _setup_vecs(self, dct):
         """Create vectors and slices based on a dictionary of variables
 
         Args:
             dct (dict): A dictionary in which keys are variable names and
                 values are dictionaries of attributes, which include an
                 'init' entry for initial value.
-            pinned (dct): A dictionary of variable-values to hold constant.
-                Deprecated.
 
         Returns:
             dict: A dictionary of slices. Each slice corresponds to values
@@ -188,12 +186,9 @@ class Solver:
             ndarray: A 1d vector for return values
         """
         slices = {}
-        pinned = {} if pinned is None else pinned  # Deprecated
         meta = {}
         i = 0
         for key, item in dct.items():
-            if key in pinned:
-                continue
             n = len(item["init"])
             slices[key] = slice(i, i + n)
             meta[key] = item
@@ -204,7 +199,7 @@ class Solver:
         ret = np.zeros(i)
         return slices, state, ret
 
-    def _make_dcts(self, slices, state, ret, pinned=None):
+    def _make_dcts(self, slices, state, ret):
         """Create dictionaries of numpy views for all variables"""
         state_dct = {}
         ret_dct = {}
@@ -215,11 +210,6 @@ class Solver:
 
             ret_view = ret[slc]
             ret_dct[name] = ret_view
-        if pinned is not None:
-            pinned_update = {k: np.atleast_1d(v) for k, v in pinned.items()}
-            state_dct.update(pinned_update)
-            ret_update = {k: np.zeros_like(v) for k, v in pinned.items()}
-            ret_dct.update(ret_update)
         return state_dct, ret_dct
 
     def _fetch_vars(self):
@@ -299,16 +289,12 @@ class Solver:
             out.extend(l)
         return out
 
-    def npsolve_init(self, pinned=None):
+    def npsolve_init(self):
         """Initialise the Partials and be ready to solve
-
-        Args:
-            pinned (dict): A dictionary of variable-value pairs to hold
-                constant during stepping.
         """
         dct = self._fetch_vars()
-        slices, state, ret = self._setup_vecs(dct, pinned)
-        state_dct, ret_dct = self._make_dcts(slices, state, ret, pinned)
+        slices, state, ret = self._setup_vecs(dct)
+        state_dct, ret_dct = self._make_dcts(slices, state, ret)
         self.npsolve_variables = dct
         self.npsolve_slices = slices
         self.npsolve_state = state
@@ -327,20 +313,6 @@ class Solver:
         """Tidy up after a round of solving"""
         for partial in self._partials:
             partial._set_caching(enable=True)
-
-    @contextmanager
-    def pinned(self, dct):
-        """A context manager that unpins all variables on exit
-        
-        Deprecation warning:
-            This is deprecated and will be removed.
-        
-        """
-        self.npsolve_init(pinned=dct)
-        yield
-        state = self.npsolve_state.copy()
-        self.npsolve_init()
-        self.npsolve_state[:] = state
 
     def one_way_step(self, vec, *args, **kwargs):
         """The method to be called every iteration with no return val
