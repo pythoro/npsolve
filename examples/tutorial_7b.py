@@ -90,10 +90,10 @@ def run():
     partials = [Component1(), Component2()]
     solver.connect(partials)
     dct = solver.run(end=10.0)
-    return dct, solver
+    return dct
 
 
-def plot(dct, s):
+def plot(dct):
     plt.plot(dct["time"], dct["position1"], label="position1")
     plt.plot(dct["time"], dct["velocity1"], label="velocity1")
     plt.plot(dct["time"], dct["position2"], label="position2")
@@ -102,7 +102,6 @@ def plot(dct, s):
     plt.legend()
 
 
-def go():
-    dct, s = run()
-    plot(dct, s)
-    return s
+def execute():
+    dct = run()
+    plot(dct)

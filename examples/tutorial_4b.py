@@ -106,6 +106,7 @@ def run(t_end=3.0, n=100001):
 
 
 def plot_xs(dct):
+    plt.figure()
     plt.plot(dct["time"], dct["s_pos"][:, 0], label="slider")
     plt.plot(dct["time"], dct["p_pos"][:, 0], label="pendulum")
     plt.xlabel("time")
@@ -114,6 +115,7 @@ def plot_xs(dct):
 
 
 def plot_trajectories(dct):
+    plt.figure()
     plt.plot(dct["s_pos"][:, 0], dct["s_pos"][:, 1], label="slider")
     plt.plot(dct["p_pos"][:, 0], dct["p_pos"][:, 1], label="pendulum")
     plt.xlabel("x")
@@ -124,16 +126,17 @@ def plot_trajectories(dct):
     plt.legend(loc=2)
 
 
-def execute(freq):
-    partials = [Slider(freq=freq), Pendulum()]
-    dct = run(partials, t_end=10.0, n=10001)
-    plot_xs(dct)
-    plot_trajectories(dct)
-
-
 def plot_distance_check(dct):
+    plt.figure()
     diff = dct["p_pos"] - dct["s_pos"]
     dist = np.linalg.norm(diff, axis=1)
     plt.plot(dct["time"], dist)
     plt.xlabel("time")
     plt.ylabel("length")
+
+
+def execute():
+    dct = run(t_end=10.0, n=10001)
+    plot_xs(dct)
+    plot_trajectories(dct)
+    plot_distance_check(dct)

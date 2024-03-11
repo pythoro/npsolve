@@ -455,3 +455,5 @@ class Solver:
                 "partials argument must be a list of list or dict of "
                 + " npsolve.Partial instances."
             )
+
+    connect = connect_partials

@@ -36,7 +36,7 @@ class Particle(npsolve.Partial):
 
 
 class Solver(npsolve.Solver):
-    def solve(self, t_end=3.0, n=100001):
+    def solve(self, t_end=1.0, n=100001):
         self.npsolve_init() # Initialise
         t_vec = np.linspace(0, t_end, n)
         solution = odeint(self.step, self.npsolve_initial_values, t_vec)
@@ -45,14 +45,16 @@ class Solver(npsolve.Solver):
         return dct
 
 
-def run(t_end=3.0, n=100001):
-    partials = [Particle()]
+def run(t_end=1.0, n=100001):
+    particle = Particle()
     solver = Solver()
-    solver.connect(partials)
-    return solver.solve(t_end=t_end, n=n)
+    solver.connect_partial(particle)
+    dct = solver.solve(t_end=t_end, n=n)
+    return particle, dct
 
 
 def plot(dct, particle):
+    plt.figure()
     plt.plot(dct['position'][:,0], dct['position'][:,1], linewidth=0.5)
     plt.scatter(particle.positions[:,0], particle.positions[:,1], c='r',
                 marker='.')
@@ -71,3 +73,9 @@ def plot_vs_time(dct, particle):
                 marker='.')
     axes[1].set_xlabel('time')
     axes[1].set_ylabel('y')
+    
+def execute():
+    particle, dct = run()
+    plot(dct, particle)
+    plot_vs_time(dct, particle)
+    

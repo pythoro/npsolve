@@ -69,15 +69,20 @@ class Solver(npsolve.Solver):
 
 
 def run(t_end=3.0, n=100001):
-    partials = [Ball()]
+    ball = Ball()
     solver = Solver()
-    solver.connect(partials)
+    solver.connect_partial(ball)
     return solver.solve(t_end=t_end, n=n)
 
 def plot(dct):
+    plt.figure()
     plt.plot(dct['position'][:,0], dct['position'][:,1], label='position')
     plt.axhline(Y_SURFACE, c='r')
     plt.plot([0, X_LEDGE], [Y_LEDGE, Y_LEDGE], 'r:')
     plt.ylim(0, 6)
     plt.xlabel('x')
     plt.ylabel('y')
+    
+def execute():
+    dct = run()
+    plot(dct)
