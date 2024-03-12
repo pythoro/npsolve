@@ -307,7 +307,7 @@ class Solver:
     def npsolve_finish(self) -> None:
         """Tidy up after a round of solving"""
         for partial in self._partials:
-            partial._set_caching(enable=True)
+            partial._set_caching(enable=False)
 
     def one_way_step(self, vec: np.ndarray, *args, **kwargs) -> None:
         """The method to be called every iteration with no return val
