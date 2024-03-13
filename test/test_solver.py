@@ -8,8 +8,7 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, EMIT_VECTORS, EMIT_STATE, GET_VARS, \
-    GET_STEP_METHODS, GET_PARTIALS, SET_CACHING, GET_CACHE_CLEARS, Solver
+from npsolve.core import Solver
 
 
 class S(Solver):
@@ -43,17 +42,24 @@ class Test_Solver(unittest.TestCase):
         
     def test_fetch_vars(self):
         s = S()
-        s.setup_signals()
         
-        def get_init_a():
-            return {'a': {'init': np.array([1.1])},
+        class MockPartial:
+            def __init__(self, dct):
+                self.dct = dct
+            
+            def _get_vars(self):
+                return self.dct
+        
+        dct_a = {'a': {'init': np.array([1.1])},
                     'b': {'init': np.array([2.2])}}
 
-        def get_init_b():
-            return {'c': {'init': np.array([3.3, 4.4])}}
+        dct_b = {'c': {'init': np.array([3.3, 4.4])}}
         
-        s._signals[GET_VARS].connect(get_init_a)
-        s._signals[GET_VARS].connect(get_init_b)
+        mock_a = MockPartial(dct_a)
+        mock_b = MockPartial(dct_b)
+        
+        s.connect_partial(mock_a)
+        s.connect_partial(mock_b)
         
         dct = s._fetch_vars()
         slices, state, ret = s._setup_vecs(dct)
@@ -64,7 +70,6 @@ class Test_Solver(unittest.TestCase):
 
     def test_emit_vectors(self):
         s = S()
-        s.setup_signals()
         state = np.array([1.1, 2.2, 3.3, 4.4])
         ret = np.zeros(4)
         a_arr = state[0:1]
@@ -79,70 +84,62 @@ class Test_Solver(unittest.TestCase):
         s.npsolve_state_dct = state_dct
         s.npsolve_ret_dct = ret_dct
         
-        dct = {}
-        def test_receiver(state_dct, ret_dct):
-            dct['state_dct'] = state_dct
-            dct['ret_dct'] = ret_dct
+        class MockPartial:
+            def __init__(self):
+                self.dct = {}
             
-        s._signals[EMIT_VECTORS].connect(test_receiver)
+            def set_vectors(self, state_dct, ret_dct):
+                self.dct = {'state_dct': state_dct,
+                            'ret_dct': ret_dct}
         
+        p = MockPartial()            
+        s.connect_partial(p)
         s._emit_vectors()
-    
-        self.assertEqual(dct['state_dct'], s.npsolve_state_dct)
-        self.assertEqual(dct['ret_dct'], s.npsolve_ret_dct)
+        self.assertEqual(p.dct['state_dct'], s.npsolve_state_dct)
+        self.assertEqual(p.dct['ret_dct'], s.npsolve_ret_dct)
 
     def test_fetch_step_methods(self):
         s = S()
-        s.setup_signals()
         
-        def step_a():
-            pass
-
-        def step_b():
-            pass
+        class MockPartial:
+            def step(self, state_dct, *args):
+                pass
+            
+            def _get_step_method(self):
+                return self.step
         
-        def get_step_a():
-            return step_a
-
-        def get_step_b():
-            return step_b
+        p_a = MockPartial()
+        p_b = MockPartial()
         
-        s._signals[GET_STEP_METHODS].connect(get_step_a)
-        s._signals[GET_STEP_METHODS].connect(get_step_b)
+        s.connect_partial(p_a)
+        s.connect_partial(p_b)
         
         lst = s._fetch_step_methods()
-        self.assertEqual(lst, [step_a, step_b])
+        self.assertEqual(lst, [p_a.step, p_b.step])
 
     def test_fetch_partials(self):
         s = S()
-        s.setup_signals()
         
-        class Dummy():
-            npsolve_name = 'dummy'
-            def _get_self(self):
-                return self
-
-        class Mock():
-            npsolve_name = 'mock'
-            def _get_self(self):
-                return self
+        class MockPartial:
+            def __init__(self, name):
+                self.npsolve_name = name
         
-        d = Dummy()
-        m = Mock()
-        s._signals[GET_PARTIALS].connect(d._get_self)
-        s._signals[GET_PARTIALS].connect(m._get_self)
-                
+        p_a = MockPartial('dummy')
+        p_b = MockPartial('mock')
+        
+        s.connect_partial(p_a)
+        s.connect_partial(p_b)
         dct = s.fetch_partials()
-        self.assertEqual(dct, {'dummy': d, 'mock': m})
+        self.assertEqual(dct, {'dummy': p_a, 'mock': p_b})
 
     def test_step(self):
         s = S()
-        s.setup_signals()
         
-        def step(state_dct):
-            return {'a': state_dct['a'] * 2}
+        class MockPartial:
+            def step(self, state_dct):
+                return {'a': state_dct['a'] * 2}
         
-        s._step_methods = [step]
+        p = MockPartial()
         
         state = np.array([1.1])
         ret = np.zeros(1)
@@ -154,6 +151,8 @@ class Test_Solver(unittest.TestCase):
         s.npsolve_ret = ret
         s.npsolve_state_dct = state_dct
         s.npsolve_ret_dct = ret_dct
+        s._partials = [p]
+        s._step_methods = [p.step]
         
         vec = np.array([3.3])
         ret_arr = s.step(vec)

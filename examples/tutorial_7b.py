@@ -4,16 +4,19 @@ Created on Mon Oct 30 12:20:43 2023
 
 @author: Reuben
 
-A one-module demo showing the use of dependency injection to communicate
-between classes.
+A one-module demo showing the use of fastwire to communicate between classes.
 
-This is now the preferred way to communicate between Partial objects.
+Fastwire is powerful but the connections are not made explicitly, so they can
+be confusing. It can also be more challenging to unittest.
 
 """
 import npsolve
 from scipy.integrate import odeint
+import fastwire as fw
 import matplotlib.pyplot as plt
 import numpy as np
+
+wire_box = fw.wire_box("demo")
 
 from npsolve.solvers import FINAL, STOP
 
@@ -26,6 +29,7 @@ class Component1(npsolve.Partial):
         super().__init__()  # Don't forget to call this!
         self.add_var("position1", init=0.1)
         self.add_var("velocity1", init=0.3)
+        wire_box["demo_wire"].connect(self.get_force)
 
     def get_force(self):
         F = (
@@ -51,21 +55,19 @@ class Component1(npsolve.Partial):
         return derivatives
 
 
-class Component2(npsolve.Partial):
+class Component2(fw.Wired, npsolve.Partial):
     def __init__(self):
         super().__init__()  # Don't forget to call this!
         self.add_var("position2", init=0.0)
         self.add_var("velocity2", init=0.0)
-
-    def connect(self, other: Component1):
-        self._connected = other
+        self._wire = wire_box["demo_wire"]
 
     def calculate(self, t):
         """Some arbitrary calculations based on current time t
         and the position at that time calculated in Component1.
         This returns a derivative for variable 'position2'
         """
-        force = -self._connected.get_force()  # Negative for reaction force
+        force = -self._wire.fetch()  # Negative for reaction force
         if status[FINAL]:
             logger["c2_force"].append(force)
         derivatives = {
@@ -83,10 +85,9 @@ def run():
     solver = npsolve.solvers.Integrator(
         status=status, logger=logger, framerate=60.0, x_name="time"
     )
-    comp1 = Component1()
-    comp2 = Component2()
-    comp2.connect(comp1)  # Inject dependency
-    partials = [comp1, comp2]
+    # This time, create a new wire container just for the solver
+    container = wire_box.add(id(solver), activate=True, remove_with=solver)
+    partials = [Component1(), Component2()]
     solver.connect(partials)
     dct = solver.run(end=10.0)
     return dct

@@ -1,8 +1,8 @@
 # npsolve
 
-The *npsolve* package is a small, simple package built on *numpy* and
-*fastwire* to make it easy to use object-oriented classes and methods for
-the calculation step for numerical solvers.
+The *npsolve* package is a small, simple package built on *numpy* to make it
+easy to use object-oriented classes and methods for the calculation step for
+numerical solvers.
 
 Many numerical solvers (like those in *scipy*) provide candidate solutions as
 a numpy ndarray. They often also require a numpy ndarray as a return value
@@ -131,7 +131,7 @@ to maintain!
 
 To run, we just have to instantiate the Solver and Partial instances,
 then pass a list or dictionary of the Partial instances to the `connect` 
-method of the Solver. They'll link up automatically through *fastwire*.
+method of the Solver. They'll link up automatically.
 
 
 ```python
