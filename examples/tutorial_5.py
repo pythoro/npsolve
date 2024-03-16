@@ -13,11 +13,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tutorial_3 import Particle
 from tutorial_4 import Pendulum, Solver
-import fastwire as fw
-wire_box = fw.get_wire_box('demo')
 
 
-class Particle2(Particle, fw.Wired):
+class Particle2(Particle):
         
     def pivot(self, t):
         velocity = np.array([self.xts(t, der=1), self.yts(t, der=1)])
