@@ -8,16 +8,9 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import sb, EMIT_VECTORS, EMIT_STATE, GET_VARS, \
-    GET_STEP_METHODS, GET_PARTIALS, SET_CACHING, GET_CACHE_CLEARS, Partial
+from npsolve.core import Partial
 from npsolve.cache import multi_cached, mono_cached
 
-def make_signals():
-    sb.get_active().clear()
-    s_names = [EMIT_VECTORS, EMIT_STATE, GET_VARS, GET_STEP_METHODS,
-               GET_PARTIALS, SET_CACHING, GET_CACHE_CLEARS]
-    signals = {name: sb.get(name) for name in s_names}
-    return signals
 
 class P(Partial):
     def __init__(self):
@@ -49,9 +42,7 @@ class Cached(P):
 
 
 def make_partial(cls=P):
-    signals = make_signals()
     p = cls()
-    p.connect()
     state = np.array([1.3, 5.6])
     ret = np.zeros(2)
     a_arr = state[0:1]
@@ -60,27 +51,18 @@ def make_partial(cls=P):
     b_arr.flags['WRITEABLE'] = False
     state_dct = {'a': a_arr, 'b': b_arr}
     ret_dct = {'a': ret[0:1], 'b': ret[1:2]}
-    signals[EMIT_VECTORS].emit(state_dct=state_dct, ret_dct=ret_dct)
+    p.set_vectors(state_dct=state_dct, ret_dct=ret_dct)
     p.a = state_dct['a']
     p.b = state_dct['b']
     return p, state, ret, state_dct, ret_dct
 
 
 class Test_Partial(unittest.TestCase):
-
-    def test_connect_before_solver(self):
-        def test_fun():
-            sb.get_active().clear()
-            p = Partial()    
-            p.connect()
-        self.assertRaises(KeyError, test_fun)
         
     def test_create(self):
-        signals = make_signals()
         p = P()
 
     def test_set_init(self):
-        signals = make_signals()
         p = P()
         p.set_init('a', 0.8)
         p.set_init('b', 55.1)
@@ -89,13 +71,11 @@ class Test_Partial(unittest.TestCase):
         self.assertEqual(p.npsolve_vars, dct)
         
     def test_get_init(self):
-        signals = make_signals()
         p = P()
-        p.connect()
-        dicts = signals[GET_VARS].fetch_all()
+        var_dct = p._get_vars()
         dct = {'a': {'init': np.array([0.7])},
                'b': {'init': np.array([5.0])}}
-        self.assertEqual(dicts[0], dct)
+        self.assertEqual(var_dct, dct)
         
     def test_set_vectors(self):
         p, state, ret, state_dct, ret_dct = make_partial()
@@ -119,13 +99,8 @@ class Test_Partial(unittest.TestCase):
 
     def test_fetch_step(self):
         p, state, ret, state_dct, ret_dct = make_partial()
-        lst = sb.get(GET_STEP_METHODS).fetch_all()
-        self.assertEqual(lst[0], p.step)
-
-    def test_fetch_partials(self):
-        p, state, ret, state_dct, ret_dct = make_partial()
-        lst = sb.get(GET_PARTIALS).fetch_all()
-        self.assertEqual(lst[0], p)
+        p_step = p._get_step_method()
+        self.assertEqual(p_step, p.step)
         
     def test_step(self):
         p, state, ret, state_dct, ret_dct = make_partial()
@@ -138,18 +113,15 @@ class Test_Partial(unittest.TestCase):
 class Test_Partial_Mono_Caching(unittest.TestCase):
 
     def test_mono_cache_init(self):
-        signals = make_signals()
         p = Cached()
         
     def test_mono_cache_after_call(self):
-        signals = make_signals()
         p = Cached()
         p.mono.cache_enable()
         ret_1 = p.mono(65.1)
         self.assertEqual(ret_1, 65.1)
 
     def test_mono_cache_not_enabled(self):
-        signals = make_signals()
         p = Cached()
         ret_1 = p.mono(65.1)
         ret_2 = p.mono(31.2)
@@ -157,7 +129,6 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
         self.assertEqual(ret_2, 31.2)
         
     def test_mono_cache_disabled(self):
-        signals = make_signals()
         p = Cached()
         p.mono.cache_enable()
         p.mono.cache_disable()
@@ -167,7 +138,6 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
         self.assertEqual(ret_2, 31.2)
         
     def test_mono_cache_after_second_call(self):
-        signals = make_signals()
         p = Cached()
         p.mono.cache_enable()
         ret_1 = p.mono(65.1)
@@ -176,7 +146,6 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
         self.assertEqual(ret_2, 65.1)
         
     def test_mono_cache_clear(self):
-        signals = make_signals()
         p = Cached()
         p.mono.cache_enable()
         ret_1 = p.mono(65.1)
@@ -185,7 +154,6 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
         self.assertEqual(ret_2, np.array(31.2))
 
     def test_mono_cache_separate_caches(self):
-        signals = make_signals()
         p = Cached()
         p.mono.cache_enable()
         p.mono.cache_clear()
@@ -196,7 +164,6 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
         self.assertEqual(ret_3, 100)
         
     def test_get_cache_clear_functions(self):
-        signals = make_signals()
         p = Cached()
         lst = p._get_cache_clear_functions()
         self.assertEqual(len(lst), 4)
@@ -204,7 +171,6 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
             self.assertEqual(callable(f), True)
                 
     def test_get_cached_methods(self):
-        signals = make_signals()
         p = Cached()
         lst = p._get_cached_methods()
         self.assertEqual(len(lst), 4)
@@ -212,9 +178,8 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
             self.assertEqual(callable(f), True)
 
     def test_set_caching(self):
-        signals = make_signals()
         p = Cached()
-        signals[SET_CACHING].emit(enable=True)
+        p._set_caching(enable=True)
         ret = p.mono(5)
         ret2 = p.mono(5)
         self.assertEqual(ret, ret2)
@@ -223,18 +188,15 @@ class Test_Partial_Mono_Caching(unittest.TestCase):
 class Test_Partial_Multi_Caching(unittest.TestCase):
 
     def test_multi_cache_init(self):
-        signals = make_signals()
         p = Cached()
         
     def test_multi_cache_after_call(self):
-        signals = make_signals()
         p = Cached()
         p.multi.cache_enable()
         ret_1 = p.multi(65.1)
         self.assertEqual(ret_1, 65.1)
 
     def test_multi_cache_not_enabled(self):
-        signals = make_signals()
         p = Cached()
         ret_1 = p.multi(65.1)
         ret_2 = p.multi(31.2)
@@ -242,7 +204,6 @@ class Test_Partial_Multi_Caching(unittest.TestCase):
         self.assertEqual(ret_2, 31.2)
         
     def test_multi_cache_disabled(self):
-        signals = make_signals()
         p = Cached()
         p.multi.cache_enable()
         p.multi.cache_disable()
@@ -252,7 +213,6 @@ class Test_Partial_Multi_Caching(unittest.TestCase):
         self.assertEqual(ret_2, 31.2)
         
     def test_multi_cache_after_second_call(self):
-        signals = make_signals()
         p = Cached()
         p.multi.cache_enable()
         ret_1 = p.multi(65.1)
@@ -261,7 +221,6 @@ class Test_Partial_Multi_Caching(unittest.TestCase):
         self.assertEqual(ret_2, 31.2)
         
     def test_multi_cache_clear(self):
-        signals = make_signals()
         p = Cached()
         p.multi.cache_enable()
         p.multi.cache_clear()
@@ -271,7 +230,6 @@ class Test_Partial_Multi_Caching(unittest.TestCase):
         self.assertEqual(len(p.multi.__closure__[0].cell_contents), 0)
 
     def test_multi_cache_separate_caches(self):
-        signals = make_signals()
         p = Cached()
         p.multi.cache_enable()
         p.multi.cache_clear()
@@ -285,7 +243,6 @@ class Test_Partial_Multi_Caching(unittest.TestCase):
         self.assertEqual(len(p.multi_b.__closure__[0].cell_contents), 1)
         
     def test_cache_clear(self):
-        signals = make_signals()
         p = Cached()
         p.multi.cache_enable()
         p.multi.cache_clear()

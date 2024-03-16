@@ -4,7 +4,7 @@ Created on Sun May 24 07:23:55 2020
 
 @author: Reuben
 
-This example for Tutorial 4 illustrates how to use dependency injection to pass
+This example for Tutorial 4 illustrates how to use fastwire to pass
 values between classes.
 
 """
@@ -16,8 +16,12 @@ import npsolve
 
 G = np.array([0, -9.80665])
 
+import fastwire as fw
 
-class Slider(npsolve.Partial):
+wire_box = fw.get_wire_box("demo")
+
+
+class Slider(npsolve.Partial, fw.Wired):
     def __init__(self, freq=1.0, mass=1.0):
         super().__init__()  # Don't forget to call this!
         self.freq = freq
@@ -25,10 +29,7 @@ class Slider(npsolve.Partial):
         self.add_var("s_pos", init=np.zeros(2))
         self.add_var("s_vel", init=np.zeros(2))
 
-    def connect_to_pendulum(self, pendulum):
-        self._pendulum = pendulum
-        pendulum.connect_to_slider(self)
-
+    @wire_box.supply("pivot")
     def pivot(self, t):
         """The location of the pivot that connects to the pendulum"""
         return self.state["s_pos"], self.state["s_vel"]
@@ -39,7 +40,7 @@ class Slider(npsolve.Partial):
 
     def step(self, state_dct, t, *args):
         """Called by the solver at each time step"""
-        F_pivot = -self._pendulum.F_pivot(t)
+        F_pivot = -wire_box["F_pivot"].fetch(t)
         F_pivot_x = F_pivot[0]
         F_sinusoid_x = self.F_sinusoid(t)
         F_net_x = F_pivot_x + F_sinusoid_x
@@ -48,7 +49,7 @@ class Slider(npsolve.Partial):
         return derivatives
 
 
-class Pendulum(npsolve.Partial):
+class Pendulum(npsolve.Partial, fw.Wired):
     def __init__(self, mass=1.0, k=1e6, c=1e4, l=1.0):
         super().__init__()  # Don't forget to call this!
         self.mass = mass
@@ -58,13 +59,11 @@ class Pendulum(npsolve.Partial):
         self.add_var("p_pos", init=np.array([0, -self.l]))
         self.add_var("p_vel", init=np.array([0, 0]))
 
-    def connect_to_slider(self, slider):
-        self._slider = slider
-
+    @wire_box.supply("F_pivot")
     @npsolve.mono_cached()
     def F_pivot(self, t):
         """Work out the force on the pendulum mass"""
-        pivot_pos, pivot_vel = self._slider.pivot(t)  # Will be up to date
+        pivot_pos, pivot_vel = wire_box["pivot"].fetch(t)
         rel_pos = pivot_pos - self.state["p_pos"]
         rel_vel = pivot_vel - self.state["p_vel"]
         dist = np.linalg.norm(rel_pos)
@@ -100,7 +99,6 @@ class Solver(npsolve.Solver):
 def run(t_end=3.0, n=100001):
     slider = Slider()
     pendulum = Pendulum()
-    slider.connect_to_pendulum(pendulum)
     partials = [slider, pendulum]
     solver = Solver()
     solver.connect(partials)
