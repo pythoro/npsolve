@@ -434,7 +434,9 @@ class Solver:
         """Connect a Partial instance"""
         self._partials.append(partial)
 
-    def connect_partials(self, partials: list[Partial]) -> None:
+    def connect_partials(
+        self, partials: typing.Union[dict[str, Partial], list[Partial]]
+    ) -> None:
         """Connect a dict or list of partials to the Solver instance
 
         Args:
