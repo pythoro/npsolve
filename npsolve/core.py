@@ -9,6 +9,8 @@ good flexibility without compromising on performance.
 
 """
 
+from __future__ import annotations
+
 import numpy as np
 import traceback
 import typing
@@ -93,7 +95,7 @@ class Partial:
         init: typing.Union[float, int, np.ndarray],
         safe: bool = True,
         live: bool = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Add a new variable
 
@@ -459,3 +461,167 @@ class Solver:
             )
 
     connect = connect_partials
+
+
+class Variable:
+    def __init__(self, name, init):
+        self.name = name
+        self.init = init
+
+    def set_init(self, init):
+        self.init = init
+
+
+class Component:
+    """An interface for a specific component."""
+
+    def __init__(self, name: str, obj: object) -> None:
+        self.name = name
+        self.set_obj(obj)
+        self._vars = {}
+
+    @property
+    def variables(self):
+        return self._vars.values()
+
+    def get_variable(self, name: str) -> Variable:
+        return self._vars[name]
+
+    def set_obj(self, obj: object) -> None:
+        self.obj = obj
+
+    def add_var(self, name: str, init: float | np.ndarray) -> None:
+        var = Variable(name, init)
+        self._vars[name] = var
+
+    def set_init(self, name: str, init: float | np.ndarray) -> None:
+        self._vars[name].set_init(init)
+
+
+class Slicer:
+    def __init__(self, dct: dict | None = None):
+        self._slices = {}
+        self._i = 0
+        if dct is not None:
+            self.add_dict(dct)
+
+    @property
+    def slices(self):
+        return self._slices.copy()
+
+    @property
+    def length(self):
+        return self._i
+
+    def add_dict(self, dct: dict):
+        for key, val in dct.items():
+            self.add(key, val)
+
+    def add(self, key: str, val: np.ndarray | float):
+        vec = np.atleast_1d(val)
+        n = len(vec)
+        self._slices[key] = slice(self._i, self._i + n)
+        self._i += n
+
+    def get_slice(self, key: str):
+        return self._slices[key]
+
+    def get_view(self, vec: np.ndarray, key: str, writeable: bool):
+        view = vec[self.get_slice(key)]
+        view.flags.writeable = writeable
+        return view
+
+    def get_state(self, dct: dict):
+        state = np.zeros(self._i)
+        for key, val in dct.items():
+            state[self.get_slice(key)] = val
+        return state
+
+    def get_state_dct(self, state, keys, view_keys=None, writeable=False):
+        view_keys = keys if view_keys is None else view_keys
+        state_dct = {}
+        for key, view_key in zip(keys, view_keys):
+            state_dct[view_key] = self.get_view(state, key, writeable=writeable)
+        return state_dct
+
+
+class Package:
+    def __init__(self):
+        self._stages = [[]]
+        self._components = {}
+        self._deriv_methods = {}
+
+    @property
+    def components(self):
+        return self._components
+
+    def add_component(self, component: Component, deriv_method_name: str | None) -> None:
+        self._components[component.name] = component
+        if deriv_method_name is not None:
+            try:
+                method = getattr(component.obj, deriv_method_name)
+            except AttributeError as e:
+                raise AttributeError("Derivative method not found for component '" + component.name +
+                "': '" + deriv_method_name + "'")
+            self._deriv_methods[component.name] = method
+
+
+    def set_from_list(self, lst: list[list[str, str]]):
+        self._stages = []
+        for stage_lst in lst:
+            self.next_stage()
+            for component_name, method_name in stage_lst:
+                self.add_stage_call(component_name, method_name)
+
+    def next_stage(self):
+        self._stages.append([])
+
+    def add_stage_call(self, component_name: str, method_name: str):
+        stage = self._stages[-1]
+        try:
+            component = self._components[component_name]
+        except KeyError as e:
+            raise KeyError("Component not found in Package: '" + component_name 
+            + "'. Use the add_component method to add it first.") from e
+        try:
+            method = getattr(component.obj, method_name)
+        except AttributeError as e:
+            raise AttributeError("Method not found for component '" + component_name +
+            "': '" + method_name + "'")
+        if method in stage:
+            raise ValueError("Component already in stage.")
+        stage.append((component_name, method))
+
+    def get_inits(self):
+        inits = {}
+        for component in self._components.values():
+            for variable in component.variables:
+                inits[variable.name] = variable.init
+        return inits
+
+    def setup(self, inits=None):
+        inits = self.get_inits() if inits is None else inits
+        slicer = Slicer(inits)
+        state = slicer.get_state(inits)
+        ret = np.zeros_like(state)
+        state_dct = slicer.get_state_dct(state, inits.keys(), writeable=False)
+        ret_dct = slicer.get_state_dct(ret, inits.keys(), writeable=True)
+        self.inits = inits
+        self.init_vec = state.copy()
+        self._state = state
+        self._ret = ret
+        self._state_dct = state_dct
+        self._ret_dct = ret_dct
+        self.slices = slicer.slices
+
+    def step(self, vec, *args, **kwargs):
+        self._state[:] = vec
+        ret_dct = self._ret_dct
+        state_dct = self._state_dct
+        for stage in self._stages:
+            for component_name, method in stage:
+                method(state_dct, *args, **kwargs)
+        for deriv_method in self._deriv_methods.values():
+            for name, val in deriv_method(state_dct, *args, **kwargs).items():
+                ret_dct[name][:] = val  # sets values efficiently in self._ret
+        return self._ret

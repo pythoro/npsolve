@@ -14,72 +14,105 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
 
-class Component1(npsolve.Partial):
-    def __init__(self):
-        super().__init__()  # Don't forget to call this!
-        self.add_var("position1", init=0.1)
-        self.add_var("velocity1", init=0.3)
+class Component1():
+
+    def set_comp2_acc(self, acc):
+        self._comp2_acc = acc
+
+    def get_pos(self, state_dct):
+        return state_dct['position1']
 
     def step(self, state_dct, t, *args):
         """Called by the solver at each time step
 
         Calculate acceleration based on the net component2_value.
         """
-        acceleration = 1.0 * self.state["component2_value"]
+        acceleration = self._comp2_acc
         derivatives = {
-            "position1": self.state["velocity1"],
+            "position1": state_dct["velocity1"],
             "velocity1": acceleration,
         }
         return derivatives
 
+class Component2:
+    def get_acceleration(self, state_dct):
+        return 1.0 * state_dct["component2_value"]
 
-class Component2(npsolve.Partial):
-    def __init__(self):
-        super().__init__()  # Don't forget to call this!
-        self.add_var("component2_value", init=-0.1)
+    def set_comp1_pos(self, pos):
+        self._comp1_pos = pos
 
-    def calculate(self, t):
+    def calculate(self, state_dct, t):
         """Some arbitrary calculations based on current time t
         and the position at that time calculated in Component1.
         This returns a derivative for variable 'c'
         """
-        dc = 1.0 * np.cos(2 * t) * self.state["position1"]
+        dc = 1.0 * np.cos(2 * t) * self._comp1_pos
         derivatives = {"component2_value": dc}
         return derivatives
 
     def step(self, state_dct, t, *args):
         """Called by the solver at each time step"""
-        return self.calculate(t)
+        return self.calculate(state_dct, t)
+
+class Assembly:
+    def __init__(self, comp1, comp2):
+        self.comp1 = comp1
+        self.comp2 = comp2
+
+    def precalcs(self, state_dct, t):
+        comp1 = self.comp1
+        comp2 = self.comp2
+        comp1_pos = comp1.get_pos(state_dct)
+        comp2_acc = comp2.get_acceleration(state_dct)
+        comp1.set_comp2_acc(comp2_acc)
+        comp2.set_comp1_pos(comp1_pos)
 
 
-class Solver(npsolve.Solver):
-    def solve(self, t_end=10):
-        self.npsolve_init()  # Initialise
-        self.t_vec = np.linspace(0, t_end, 1001)
-        result = odeint(self.step, self.npsolve_initial_values, self.t_vec)
-        return result
+def get_package():
+    comp1 = Component1()
+    npsolve_component1 = npsolve.Component('comp1', comp1)
+    npsolve_component1.add_var("position1", init=0.1)
+    npsolve_component1.add_var("velocity1", init=0.3)
+    comp2 = Component2()
+    npsolve_component2 = npsolve.Component('comp2', comp2)
+    npsolve_component2.add_var("component2_value", init=-0.1)
+    assembly = Assembly(comp1, comp2)
+    npsolve_assembly = npsolve.Component('assembly', assembly)
+    package = npsolve.Package()
+    package.add_component(npsolve_component1, 'step')
+    package.add_component(npsolve_component2, 'step')
+    package.add_component(npsolve_assembly, None)
+    package.add_stage_call('assembly', 'precalcs')
+    package.setup()
+    return package
+
+
+def solve(package, t_end=10):
+    t_vec = np.linspace(0, t_end, 1001)
+    result = odeint(package.step, package.init_vec, t_vec)
+    return t_vec, result
 
 
 def run():
-    solver = Solver()
-    partials = [Component1(), Component2()]
-    solver.connect_partials(partials)
-    res = solver.solve()
-    return res, solver
+    package = get_package()
+    t_vec, result = solve(package)
+    return package, t_vec, result
 
 
-def plot(res, solver):
-    s = solver
-    slices = s.npsolve_slices
+def plot(package, t_vec, result):
+    slices = package.slices
     plt.figure()
-    plt.plot(s.t_vec, res[:, slices["position1"]], label="position1")
-    plt.plot(s.t_vec, res[:, slices["velocity1"]], label="velocity1")
+    plt.plot(t_vec, result[:, slices["position1"]], label="position1")
+    plt.plot(t_vec, result[:, slices["velocity1"]], label="velocity1")
     plt.plot(
-        s.t_vec, res[:, slices["component2_value"]], label="component2_value"
+        t_vec, result[:, slices["component2_value"]], label="component2_value"
     )
     plt.legend()
+    plt.show()
 
 
 def execute():
-    res, solver = run()
-    plot(res, solver)
+    package, t_vec, result = run()
+    plot(package, t_vec, result)
+
+execute()
