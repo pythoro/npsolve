@@ -13,30 +13,34 @@ import npsolve
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
+# Unique variable names
+COMP1_POS = 'position1'
+COMP1_VEL = 'velocity1'
+COMP2_VALUE = 'component2_value'
+
 
 class Component1():
-
-    def set_comp2_acc(self, acc):
-        self._comp2_acc = acc
+    def set_comp2_force(self, force):
+        self._comp2_force = force
 
     def get_pos(self, state_dct):
-        return state_dct['position1']
+        return state_dct[COMP1_POS]
 
     def step(self, state_dct, t, *args):
         """Called by the solver at each time step
 
         Calculate acceleration based on the net component2_value.
         """
-        acceleration = self._comp2_acc
+        acceleration = self._comp2_force * 1.0
         derivatives = {
-            "position1": state_dct["velocity1"],
+            "position1": state_dct[COMP1_VEL],
             "velocity1": acceleration,
         }
         return derivatives
 
 class Component2:
-    def get_acceleration(self, state_dct):
-        return 1.0 * state_dct["component2_value"]
+    def get_force(self, state_dct):
+        return 1.0 * state_dct[COMP2_VALUE]
 
     def set_comp1_pos(self, pos):
         self._comp1_pos = pos
@@ -47,14 +51,16 @@ class Component2:
         This returns a derivative for variable 'c'
         """
         dc = 1.0 * np.cos(2 * t) * self._comp1_pos
-        derivatives = {"component2_value": dc}
+        derivatives = {COMP2_VALUE: dc}
         return derivatives
 
     def step(self, state_dct, t, *args):
         """Called by the solver at each time step"""
         return self.calculate(state_dct, t)
 
+
 class Assembly:
+    """Handle inter-dependencies."""
     def __init__(self, comp1, comp2):
         self.comp1 = comp1
         self.comp2 = comp2
@@ -63,27 +69,20 @@ class Assembly:
         comp1 = self.comp1
         comp2 = self.comp2
         comp1_pos = comp1.get_pos(state_dct)
-        comp2_acc = comp2.get_acceleration(state_dct)
-        comp1.set_comp2_acc(comp2_acc)
+        comp2_force = comp2.get_force(state_dct)
+        comp1.set_comp2_force(comp2_force)
         comp2.set_comp1_pos(comp1_pos)
 
 
 def get_package():
-    comp1 = Component1()
-    npsolve_component1 = npsolve.Component('comp1', comp1)
-    npsolve_component1.add_var("position1", init=0.1)
-    npsolve_component1.add_var("velocity1", init=0.3)
-    comp2 = Component2()
-    npsolve_component2 = npsolve.Component('comp2', comp2)
-    npsolve_component2.add_var("component2_value", init=-0.1)
-    assembly = Assembly(comp1, comp2)
-    npsolve_assembly = npsolve.Component('assembly', assembly)
+    component1 = Component1()
+    component2 = Component2()
+    assembly = Assembly(component1, component2)
     package = npsolve.Package()
-    package.add_component(npsolve_component1, 'step')
-    package.add_component(npsolve_component2, 'step')
-    package.add_component(npsolve_assembly, None)
+    package.add_component(component1, 'comp1', 'step')
+    package.add_component(component2, 'comp2', 'step')
+    package.add_component(assembly, 'assembly', None)
     package.add_stage_call('assembly', 'precalcs')
-    package.setup()
     return package
 
 
@@ -95,18 +94,19 @@ def solve(package, t_end=10):
 
 def run():
     package = get_package()
+    inits = {COMP1_POS: 0.1,
+             COMP1_VEL: 0.3,
+             COMP2_VALUE: -0.1}
+    package.setup(inits)
     t_vec, result = solve(package)
     return package, t_vec, result
 
 
 def plot(package, t_vec, result):
     slices = package.slices
-    plt.figure()
-    plt.plot(t_vec, result[:, slices["position1"]], label="position1")
-    plt.plot(t_vec, result[:, slices["velocity1"]], label="velocity1")
-    plt.plot(
-        t_vec, result[:, slices["component2_value"]], label="component2_value"
-    )
+    plt.figure(1)
+    for slice_name, slice in slices.items():
+        plt.plot(t_vec, result[:, slice], label=slice_name)
     plt.legend()
     plt.show()
 
@@ -114,5 +114,6 @@ def plot(package, t_vec, result):
 def execute():
     package, t_vec, result = run()
     plot(package, t_vec, result)
+
 
 execute()

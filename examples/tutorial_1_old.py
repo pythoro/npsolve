@@ -71,7 +71,7 @@ def run():
 def plot(res, solver):
     s = solver
     slices = s.npsolve_slices
-    plt.figure()
+    plt.figure(2)
     plt.plot(s.t_vec, res[:, slices["position1"]], label="position1")
     plt.plot(s.t_vec, res[:, slices["velocity1"]], label="velocity1")
     plt.plot(
@@ -85,3 +85,4 @@ def execute():
     res, solver = run()
     plot(res, solver)
 
+execute()

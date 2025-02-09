@@ -463,39 +463,6 @@ class Solver:
     connect = connect_partials
 
 
-class Variable:
-    def __init__(self, name, init):
-        self.name = name
-        self.init = init
-
-    def set_init(self, init):
-        self.init = init
-
-
-class Component:
-    """An interface for a specific component."""
-
-    def __init__(self, name: str, obj: object) -> None:
-        self.name = name
-        self.set_obj(obj)
-        self._vars = {}
-
-    @property
-    def variables(self):
-        return self._vars.values()
-
-    def get_variable(self, name: str) -> Variable:
-        return self._vars[name]
-
-    def set_obj(self, obj: object) -> None:
-        self.obj = obj
-
-    def add_var(self, name: str, init: float | np.ndarray) -> None:
-        var = Variable(name, init)
-        self._vars[name] = var
-
-    def set_init(self, name: str, init: float | np.ndarray) -> None:
-        self._vars[name].set_init(init)
 
 
 class Slicer:
@@ -555,22 +522,22 @@ class Package:
     def components(self):
         return self._components
 
-    def add_component(self, component: Component, deriv_method_name: str | None) -> None:
-        self._components[component.name] = component
+    def add_component(self, component: object, name: str, deriv_method_name: str | None) -> None:
+        self._components[name] = component
         if deriv_method_name is not None:
             try:
-                method = getattr(component.obj, deriv_method_name)
+                method = getattr(component, deriv_method_name)
             except AttributeError as e:
-                raise AttributeError("Derivative method not found for component '" + component.name +
-                "': '" + deriv_method_name + "'")
-            self._deriv_methods[component.name] = method
+                raise AttributeError("Derivative method not found for component: '" +
+                + deriv_method_name + "'")
+            self._deriv_methods[name] = method
 
 
-    def set_from_list(self, lst: list[list[str, str]]):
+    def set_stage_calls(self, lst: list[dict[str: str]]):
         self._stages = []
-        for stage_lst in lst:
+        for stage_dct in lst:
             self.next_stage()
-            for component_name, method_name in stage_lst:
+            for component_name, method_name in stage_dct:
                 self.add_stage_call(component_name, method_name)
 
     def next_stage(self):
@@ -584,23 +551,16 @@ class Package:
             raise KeyError("Component not found in Package: '" + component_name 
             + "'. Use the add_component method to add it first.") from e
         try:
-            method = getattr(component.obj, method_name)
+            method = getattr(component, method_name)
         except AttributeError as e:
             raise AttributeError("Method not found for component '" + component_name +
             "': '" + method_name + "'")
-        if method in stage:
+        if method in [cname for cname, method in stage]:
             raise ValueError("Component already in stage.")
         stage.append((component_name, method))
 
-    def get_inits(self):
-        inits = {}
-        for component in self._components.values():
-            for variable in component.variables:
-                inits[variable.name] = variable.init
-        return inits
 
-    def setup(self, inits=None):
-        inits = self.get_inits() if inits is None else inits
+    def setup(self, inits):
         slicer = Slicer(inits)
         state = slicer.get_state(inits)
         ret = np.zeros_like(state)
