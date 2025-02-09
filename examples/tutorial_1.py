@@ -84,7 +84,9 @@ def get_package():
     package.add_component(component1, 'comp1', 'step')
     package.add_component(component2, 'comp2', 'step')
     package.add_component(assembly, 'assembly', None)
-    package.add_stage_call('assembly', 'precalcs')
+    package.set_stage_calls(
+        [{'assembly': 'precalcs'}]
+    )
     return package
 
 

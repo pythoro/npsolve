@@ -504,11 +504,10 @@ class Slicer:
             state[self.get_slice(key)] = val
         return state
 
-    def get_state(self, state_vec, keys, view_keys=None, writeable=False):
-        view_keys = keys if view_keys is None else view_keys
+    def get_state(self, state_vec, keys, writeable=False):
         state = {}
-        for key, view_key in zip(keys, view_keys):
-            state[view_key] = self.get_view(state_vec, key, writeable=writeable)
+        for key in keys:
+            state[key] = self.get_view(state_vec, key, writeable=writeable)
         return state
 
 
@@ -521,6 +520,10 @@ class Package:
     @property
     def components(self):
         return self._components
+
+    @property
+    def slices(self):
+        return self.slicer.slices
 
     def add_component(self, component: object, name: str, deriv_method_name: str | None) -> None:
         self._components[name] = component
@@ -537,7 +540,7 @@ class Package:
         self._stages = []
         for stage_dct in lst:
             self.next_stage()
-            for component_name, method_name in stage_dct:
+            for component_name, method_name in stage_dct.items():
                 self.add_stage_call(component_name, method_name)
 
     def next_stage(self):
@@ -572,7 +575,7 @@ class Package:
         self._ret = ret
         self._state = state
         self._ret_dct = ret_dct
-        self.slices = slicer.slices
+        self.slicer = slicer
 
     def step(self, vec, *args, log=None, **kwargs):
         self._state_vec[:] = vec
@@ -586,3 +589,5 @@ class Package:
                 ret_dct[name][:] = val  # sets values efficiently in self._ret
         return self._ret
 
+    def get_state(self, state_vec):
+        return self.slicer.get_state(state_vec.copy())
