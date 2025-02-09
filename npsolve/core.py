@@ -498,18 +498,18 @@ class Slicer:
         view.flags.writeable = writeable
         return view
 
-    def get_state(self, dct: dict):
+    def get_state_vec(self, dct: dict):
         state = np.zeros(self._i)
         for key, val in dct.items():
             state[self.get_slice(key)] = val
         return state
 
-    def get_state_dct(self, state, keys, view_keys=None, writeable=False):
+    def get_state(self, state_vec, keys, view_keys=None, writeable=False):
         view_keys = keys if view_keys is None else view_keys
-        state_dct = {}
+        state = {}
         for key, view_key in zip(keys, view_keys):
-            state_dct[view_key] = self.get_view(state, key, writeable=writeable)
-        return state_dct
+            state[view_key] = self.get_view(state_vec, key, writeable=writeable)
+        return state
 
 
 class Package:
@@ -562,26 +562,27 @@ class Package:
 
     def setup(self, inits):
         slicer = Slicer(inits)
-        state = slicer.get_state(inits)
-        ret = np.zeros_like(state)
-        state_dct = slicer.get_state_dct(state, inits.keys(), writeable=False)
-        ret_dct = slicer.get_state_dct(ret, inits.keys(), writeable=True)
+        state_vec = slicer.get_state_vec(inits)
+        ret = np.zeros_like(state_vec)
+        state = slicer.get_state(state_vec, inits.keys(), writeable=False)
+        ret_dct = slicer.get_state(ret, inits.keys(), writeable=True)
         self.inits = inits
-        self.init_vec = state.copy()
-        self._state = state
+        self.init_vec = state_vec.copy()
+        self._state_vec = state_vec
         self._ret = ret
-        self._state_dct = state_dct
+        self._state = state
         self._ret_dct = ret_dct
         self.slices = slicer.slices
 
-    def step(self, vec, *args, **kwargs):
-        self._state[:] = vec
+    def step(self, vec, *args, log=None, **kwargs):
+        self._state_vec[:] = vec
         ret_dct = self._ret_dct
-        state_dct = self._state_dct
+        state = self._state
         for stage in self._stages:
             for component_name, method in stage:
-                method(state_dct, *args, **kwargs)
+                method(state, log, *args, **kwargs)
         for deriv_method in self._deriv_methods.values():
-            for name, val in deriv_method(state_dct, *args, **kwargs).items():
+            for name, val in deriv_method(state, log, *args, **kwargs).items():
                 ret_dct[name][:] = val  # sets values efficiently in self._ret
         return self._ret
+

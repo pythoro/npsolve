@@ -17,35 +17,35 @@ import matplotlib.pyplot as plt
 COMP1_POS = 'position1'
 COMP1_VEL = 'velocity1'
 COMP2_VALUE = 'component2_value'
-
+COMP2_FORCE = 'comp2_force'
 
 class Component1():
     def set_comp2_force(self, force):
         self._comp2_force = force
 
-    def get_pos(self, state_dct):
-        return state_dct[COMP1_POS]
+    def get_pos(self, state):
+        return state[COMP1_POS]
 
-    def step(self, state_dct, t, *args):
+    def step(self, state, log, t, *args):
         """Called by the solver at each time step
 
         Calculate acceleration based on the net component2_value.
         """
         acceleration = self._comp2_force * 1.0
         derivatives = {
-            "position1": state_dct[COMP1_VEL],
+            "position1": state[COMP1_VEL],
             "velocity1": acceleration,
         }
         return derivatives
 
 class Component2:
-    def get_force(self, state_dct):
-        return 1.0 * state_dct[COMP2_VALUE]
+    def get_force(self, state):
+        return 1.0 * state[COMP2_VALUE]
 
     def set_comp1_pos(self, pos):
         self._comp1_pos = pos
 
-    def calculate(self, state_dct, t):
+    def calculate(self, state, t):
         """Some arbitrary calculations based on current time t
         and the position at that time calculated in Component1.
         This returns a derivative for variable 'c'
@@ -54,9 +54,9 @@ class Component2:
         derivatives = {COMP2_VALUE: dc}
         return derivatives
 
-    def step(self, state_dct, t, *args):
+    def step(self, state, log, t, *args):
         """Called by the solver at each time step"""
-        return self.calculate(state_dct, t)
+        return self.calculate(state, t)
 
 
 class Assembly:
@@ -65,11 +65,13 @@ class Assembly:
         self.comp1 = comp1
         self.comp2 = comp2
 
-    def precalcs(self, state_dct, t):
+    def precalcs(self, state, log, t):
         comp1 = self.comp1
         comp2 = self.comp2
-        comp1_pos = comp1.get_pos(state_dct)
-        comp2_force = comp2.get_force(state_dct)
+        comp1_pos = comp1.get_pos(state)
+        comp2_force = comp2.get_force(state)
+        if log:
+            log[COMP2_FORCE] = comp2_force
         comp1.set_comp2_force(comp2_force)
         comp2.set_comp1_pos(comp1_pos)
 
