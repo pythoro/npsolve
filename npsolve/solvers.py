@@ -197,23 +197,26 @@ class Logger:
         self.package = package
         self._x_name = x_name
         self._squeeze = squeeze
-        self.log = []
+        self._log_data = []
 
     def log(self, state_vec, t):
         log = {'stop': False, self._x_name: t}
-        self.package.step(state_vec, log=log)
-        state = self.package.get_state(state_vec)
+        package = self.package
+        slicer = package.slicer
+        package.step(state_vec, t, log)
+        state = slicer.get_state(state_vec, package.keys)
         state.update(log)
-        self.log.append(state)
+        self._log_data.append(state)
+        return log
 
     def get_data_dct(self):
-        keys = list(self.log[0].keys())
+        keys = list(self._log_data[0].keys())
         data_dct = {}
         for key in keys:
             if self._squeeze:
-                data = np.array([np.squeeze(row[key]) for row in self.log])
+                data = np.array([np.squeeze(row[key]) for row in self._log_data])
             else:
-                data = np.array([row[key] for row in self.log])
+                data = np.array([row[key] for row in self._log_data])
             data_dct[key] = data
         return data_dct
 
@@ -236,7 +239,7 @@ class ODEIntegrator:
         
     def _setup_integrator(self, package):
         """ Set up the integrator """
-        integrator = self._interface_cls(package.step)
+        integrator = self._interface_cls(package.tstep)
         integrator.set_integrator(self._integrator_name, **self._int_kwargs)
         integrator.set_initial_value(package.init_vec)
         return integrator

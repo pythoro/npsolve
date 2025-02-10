@@ -134,7 +134,7 @@ class Test_Package:
         package.add_stage_call('test_obj1', 'step')
         vec = np.array([1.0, 2.0, 3.0])
         package.setup(inits)
-        ret_vec = package.step(vec, 0)
+        ret_vec = package.step(vec, 0, log=None)
         obj_states = package.components['test_obj1'].states[0]
         assert obj_states['test_obj1_a'] == approx(np.array([1.0, 2.0]))
         assert obj_states['test_obj1_b'] == approx(np.array([3.0]))
@@ -169,7 +169,7 @@ class Test_Performance():
         
         globals_dct = {'package': package, 'vec': vec}
 
-        time = timeit.timeit('package.step(vec, 0)',
+        time = timeit.timeit('package.step(vec, 0, log=None)',
                              globals=globals_dct,
                              number=100000)
         

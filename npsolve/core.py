@@ -557,24 +557,37 @@ class Package:
         slicer = Slicer(inits)
         state_vec = slicer.get_state_vec(inits)
         ret_vec = np.zeros_like(state_vec)
-        state = slicer.get_state(state_vec, inits.keys(), writeable=False)
-        ret = slicer.get_state(ret_vec, inits.keys(), writeable=True)
+        keys = list(inits.keys())
+        state = slicer.get_state(state_vec, keys, writeable=False)
+        ret = slicer.get_state(ret_vec, keys, writeable=True)
         self.inits = inits
         self.init_vec = state_vec.copy()
         self._state_vec = state_vec
         self._ret_vec = ret_vec
         self._state = state
         self._ret = ret
+        self.keys = keys
         self.slicer = slicer
 
-    def step(self, vec, t, *args, log=None, **kwargs):
+    def step(self, vec, t, log=None, *args, **kwargs):
         self._state_vec[:] = vec
         ret = self._ret
         state = self._state
         for component_name, method in self._stage_calls:
-            method(state, t, *args, log=log, **kwargs)
+            method(state, t, log=log, **kwargs)
         for deriv_method in self._deriv_methods.values():
-            for name, val in deriv_method(state, t, *args, log=log, **kwargs).items():
+            for name, val in deriv_method(state, t, log, *args, **kwargs).items():
+                ret[name][:] = val  # sets values efficiently in self._ret
+        return self._ret_vec
+
+    def tstep(self, t, vec, log=None, *args, **kwargs):
+        self._state_vec[:] = vec
+        ret = self._ret
+        state = self._state
+        for component_name, method in self._stage_calls:
+            method(state, t, log=log, **kwargs)
+        for deriv_method in self._deriv_methods.values():
+            for name, val in deriv_method(state, t, log, *args, **kwargs).items():
                 ret[name][:] = val  # sets values efficiently in self._ret
         return self._ret_vec
 

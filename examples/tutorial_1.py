@@ -119,5 +119,5 @@ def execute():
     package, t_vec, result = run()
     plot(package, t_vec, result)
 
-
-execute()
+if __name__ == '__main__':
+    execute()
