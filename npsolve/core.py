@@ -513,7 +513,7 @@ class Slicer:
 
 class Package:
     def __init__(self):
-        self._stages = [[]]
+        self._stage_calls = []
         self._components = {}
         self._deriv_methods = {}
 
@@ -535,19 +535,12 @@ class Package:
                 + deriv_method_name + "'")
             self._deriv_methods[name] = method
 
-
-    def set_stage_calls(self, lst: list[dict[str: str]]):
-        self._stages = []
-        for stage_dct in lst:
-            self.next_stage()
-            for component_name, method_name in stage_dct.items():
-                self.add_stage_call(component_name, method_name)
-
-    def next_stage(self):
-        self._stages.append([])
+    def set_stage_calls(self, lst: list[str, str]):
+        self._stage_calls = []
+        for component_name, method_name in lst:
+            self.add_stage_call(component_name, method_name)
 
     def add_stage_call(self, component_name: str, method_name: str):
-        stage = self._stages[-1]
         try:
             component = self._components[component_name]
         except KeyError as e:
@@ -558,10 +551,7 @@ class Package:
         except AttributeError as e:
             raise AttributeError("Method not found for component '" + component_name +
             "': '" + method_name + "'")
-        if method in [cname for cname, method in stage]:
-            raise ValueError("Component already in stage.")
-        stage.append((component_name, method))
-
+        self._stage_calls.append((component_name, method))
 
     def setup(self, inits):
         slicer = Slicer(inits)
@@ -577,17 +567,16 @@ class Package:
         self._ret = ret
         self.slicer = slicer
 
-    def step(self, vec, *args, log=None, **kwargs):
+    def step(self, vec, t, *args, log=None, **kwargs):
         self._state_vec[:] = vec
         ret = self._ret
         state = self._state
-        for stage in self._stages:
-            for component_name, method in stage:
-                method(state, log, *args, **kwargs)
+        for component_name, method in self._stage_calls:
+            method(state, t, *args, log=log, **kwargs)
         for deriv_method in self._deriv_methods.values():
-            for name, val in deriv_method(state, log, *args, **kwargs).items():
+            for name, val in deriv_method(state, t, *args, log=log, **kwargs).items():
                 ret[name][:] = val  # sets values efficiently in self._ret
-        return self._ret
+        return self._ret_vec
 
     def get_state(self, state_vec):
         return self.slicer.get_state(state_vec.copy())

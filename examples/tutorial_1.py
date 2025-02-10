@@ -26,7 +26,7 @@ class Component1():
     def get_pos(self, state):
         return state[COMP1_POS]
 
-    def step(self, state, log, t, *args):
+    def step(self, state, t, log):
         """Called by the solver at each time step
 
         Calculate acceleration based on the net component2_value.
@@ -54,7 +54,7 @@ class Component2:
         derivatives = {COMP2_VALUE: dc}
         return derivatives
 
-    def step(self, state, log, t, *args):
+    def step(self, state, t, log):
         """Called by the solver at each time step"""
         return self.calculate(state, t)
 
@@ -65,7 +65,7 @@ class Assembly:
         self.comp1 = comp1
         self.comp2 = comp2
 
-    def precalcs(self, state, log, t):
+    def precalcs(self, state, t, log):
         comp1 = self.comp1
         comp2 = self.comp2
         comp1_pos = comp1.get_pos(state)
@@ -85,7 +85,7 @@ def get_package():
     package.add_component(component2, 'comp2', 'step')
     package.add_component(assembly, 'assembly', None)
     package.set_stage_calls(
-        [{'assembly': 'precalcs'}]
+        [('assembly', 'precalcs')]
     )
     return package
 

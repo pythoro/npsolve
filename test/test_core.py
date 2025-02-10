@@ -14,12 +14,11 @@ class MockObject:
     def __init__(self):
         self.states = []
 
-    def step(self, state_dct, t):
+    def step(self, state_dct, t, log):
         self.states.append(state_dct.copy())
     
-    def get_derivs(self, state_dct, t):
-        ret = {k: np.zeros_like(v) for k, v in state_dct.items()}
-        return ret
+    def get_derivs(self, state_dct, t, log):
+        return state_dct.copy()
 
 
 @pytest.fixture
@@ -105,20 +104,15 @@ class Test_Package:
         mo = MockObject()
         package.add_component(mo, 'test_obj1', 'get_derivs')
         assert len(package._components) == 1
-    
-    def test_next_stage(self):
-        package = Package()
-        package.next_stage()
-        assert len(package._stages) == 2
-    
+        
     def test_add_stage_call(self):
         package = Package()
         mo = MockObject()
         package.add_component(mo, 'test_obj1', 'get_derivs')
         package.add_stage_call('test_obj1', 'step')
-        assert len(package._stages[0]) == 1
-        assert package._stages[0][0][0] == 'test_obj1'
-        assert package._stages[0][0][1] == mo.step
+        assert len(package._stage_calls) == 1
+        assert package._stage_calls[0][0] == 'test_obj1'
+        assert package._stage_calls[0][1] == mo.step
     
     def test_setup(self):
         inits = {'test_obj1_a': np.array([0.0, 0.1]),
@@ -140,14 +134,15 @@ class Test_Package:
         package.add_stage_call('test_obj1', 'step')
         vec = np.array([1.0, 2.0, 3.0])
         package.setup(inits)
-        package.step(vec)
+        ret_vec = package.step(vec, 0)
         obj_states = package.components['test_obj1'].states[0]
         assert obj_states['test_obj1_a'] == approx(np.array([1.0, 2.0]))
         assert obj_states['test_obj1_b'] == approx(np.array([3.0]))
+        assert ret_vec == approx(vec)
         
 
 class MockObject2:    
-    def step(self, state_dct, *args):
+    def step(self, state_dct, t, log):
         return {'test_obj1_a': state_dct['test_obj1_a'] + 1.0,
                 'test_obj1_b': state_dct['test_obj1_b'] + 1.0,
                 'test_obj1_c': state_dct['test_obj1_c'] + 1.0,
@@ -174,7 +169,7 @@ class Test_Performance():
         
         globals_dct = {'package': package, 'vec': vec}
 
-        time = timeit.timeit('package.step(vec)',
+        time = timeit.timeit('package.step(vec, 0)',
                              globals=globals_dct,
                              number=100000)
         
