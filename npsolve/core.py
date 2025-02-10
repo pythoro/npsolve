@@ -566,27 +566,27 @@ class Package:
     def setup(self, inits):
         slicer = Slicer(inits)
         state_vec = slicer.get_state_vec(inits)
-        ret = np.zeros_like(state_vec)
+        ret_vec = np.zeros_like(state_vec)
         state = slicer.get_state(state_vec, inits.keys(), writeable=False)
-        ret_dct = slicer.get_state(ret, inits.keys(), writeable=True)
+        ret = slicer.get_state(ret_vec, inits.keys(), writeable=True)
         self.inits = inits
         self.init_vec = state_vec.copy()
         self._state_vec = state_vec
-        self._ret = ret
+        self._ret_vec = ret_vec
         self._state = state
-        self._ret_dct = ret_dct
+        self._ret = ret
         self.slicer = slicer
 
     def step(self, vec, *args, log=None, **kwargs):
         self._state_vec[:] = vec
-        ret_dct = self._ret_dct
+        ret = self._ret
         state = self._state
         for stage in self._stages:
             for component_name, method in stage:
                 method(state, log, *args, **kwargs)
         for deriv_method in self._deriv_methods.values():
             for name, val in deriv_method(state, log, *args, **kwargs).items():
-                ret_dct[name][:] = val  # sets values efficiently in self._ret
+                ret[name][:] = val  # sets values efficiently in self._ret
         return self._ret
 
     def get_state(self, state_vec):
