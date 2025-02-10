@@ -6,56 +6,20 @@ from pytest import approx
 import numpy as np
 
 
-from npsolve.core import Variable, Component, Slicer, Package
+from npsolve.core import Slicer, Package
 
-
-class Test_Variable:
-    def test_variable(self):
-        var = Variable('test', np.zeros(3))
-        assert var.name == 'test'
-        assert var.init == approx(np.zeros(3))
-
-    def test_set_init(self):
-        var = Variable('test', np.zeros(3))
-        var.set_init(np.array([1.0, 2.0, 3.0]))
-        assert var.init == approx(np.array([1.0, 2.0, 3.0]))
-    
 
 
 class MockObject:
     def __init__(self):
         self.states = []
 
-    def step(self, state_dct):
+    def step(self, state_dct, t):
         self.states.append(state_dct.copy())
     
-    def get_derivs(self, state_dct):
+    def get_derivs(self, state_dct, t):
         ret = {k: np.zeros_like(v) for k, v in state_dct.items()}
         return ret
-
-
-class Test_Component:
-    def test_init(self):
-        mo = MockObject()
-        component = Component('test', mo)
-        assert True
-    
-    def test_add_var(self):
-        mo = MockObject()
-        component = Component('test', mo)
-        component.add_var('var1', np.array([0.1, 0.2]))
-        var = Variable('var1', np.array([0.1, 0.2]))
-        assert component._vars['var1'].name == var.name
-        assert component._vars['var1'].init == approx(var.init)
-
-    def test_set_init(self):
-        mo = MockObject()
-        component = Component('test', mo)
-        component.add_var('var1', np.array([0.1, 0.2]))
-        component.set_init('var1', np.array([0.3, 0.4]))
-        variable = component.get_variable('var1')
-        assert variable.name == 'var1'
-        assert variable.init == approx(np.array([0.3, 0.4]))
 
 
 @pytest.fixture
@@ -93,30 +57,30 @@ class Test_Slicer:
         slc = slicer.get_slice('test_key_2')
         assert slc == slice(2, 3)
 
+    def test_get_state_vec(self, slicer1):
+        slicer = slicer1
+        dct = {
+            'test_key_1': np.array([2.0, 3.0]),
+            'test_key_2': np.array([7.0]),
+        }
+        state_vec = slicer.get_state_vec(dct)
+        assert state_vec == approx(np.array([2.0, 3.0, 7.0]))
+    
     def test_get_state(self, slicer1):
         slicer = slicer1
         dct = {
             'test_key_1': np.array([2.0, 3.0]),
             'test_key_2': np.array([7.0]),
         }
-        state = slicer.get_state(dct)
-        assert state == approx(np.array([2.0, 3.0, 7.0]))
-    
-    def test_get_state_dct(self, slicer1):
-        slicer = slicer1
-        dct = {
-            'test_key_1': np.array([2.0, 3.0]),
-            'test_key_2': np.array([7.0]),
-        }
         keys = ['test_key_1', 'test_key_2']
-        state = slicer.get_state(dct)
-        state_dct = slicer.get_state_dct(state, keys)
-        for key, val in state_dct.items():
+        state_vec = slicer.get_state_vec(dct)
+        state = slicer.get_state(state_vec, keys)
+        for key, val in state.items():
             assert val == approx(dct[key])
-        assert state_dct['test_key_1'].base is state
-        assert state_dct['test_key_2'].base is state
-        assert not state_dct['test_key_1'].flags.writeable
-        assert not state_dct['test_key_2'].flags.writeable
+        assert state['test_key_1'].base is state_vec
+        assert state['test_key_2'].base is state_vec
+        assert not state['test_key_1'].flags.writeable
+        assert not state['test_key_2'].flags.writeable
 
     def test_get_state_dct_writeable(self, slicer1):
         slicer = slicer1
@@ -125,22 +89,21 @@ class Test_Slicer:
             'test_key_2': np.array([7.0]),
         }
         keys = ['test_key_1', 'test_key_2']
-        state = slicer.get_state(dct)
-        state_dct = slicer.get_state_dct(state, keys, writeable=True)
-        for key, val in state_dct.items():
+        state_vec = slicer.get_state_vec(dct)
+        state = slicer.get_state(state_vec, keys, writeable=True)
+        for key, val in state.items():
             assert val == approx(dct[key])
-        assert state_dct['test_key_1'].base is state
-        assert state_dct['test_key_2'].base is state
-        assert state_dct['test_key_1'].flags.writeable
-        assert state_dct['test_key_2'].flags.writeable
+        assert state['test_key_1'].base is state_vec
+        assert state['test_key_2'].base is state_vec
+        assert state['test_key_1'].flags.writeable
+        assert state['test_key_2'].flags.writeable
 
 
 class Test_Package:
     def test_add_component(self):
         package = Package()
         mo = MockObject()
-        component = Component('test_obj1', mo)
-        package.add_component(component, 'get_derivs')
+        package.add_component(mo, 'test_obj1', 'get_derivs')
         assert len(package._components) == 1
     
     def test_next_stage(self):
@@ -151,8 +114,7 @@ class Test_Package:
     def test_add_stage_call(self):
         package = Package()
         mo = MockObject()
-        component = Component('test_obj1', mo)
-        package.add_component(component, 'get_derivs')
+        package.add_component(mo, 'test_obj1', 'get_derivs')
         package.add_stage_call('test_obj1', 'step')
         assert len(package._stages[0]) == 1
         assert package._stages[0][0][0] == 'test_obj1'
@@ -163,38 +125,23 @@ class Test_Package:
                  'test_obj1_b': np.array([0.2])}
         package = Package()
         package.setup(inits)
-        assert len(package._inits) == 2
-        assert len(package._state_dct) == 2
-        assert len(package._ret_dct) == 2
-        assert package._state == approx(np.array([0.0, 0.1, 0.2]))
-        assert package._ret == approx(np.zeros(3))
-
-    def test_get_inits(self):
-        package = Package()
-        mo = MockObject()
-        component = Component('test_obj1', mo)
-        component.add_var('test_obj1_a', np.array([0.0, 0.1]))
-        component.add_var('test_obj1_b', np.array([0.2]))
-        package.add_component(component, 'get_derivs')
-        package.add_stage_call('test_obj1', 'step')
-        inits = package.get_inits()
-        assert inits['test_obj1_a'] == approx(np.array([0.0, 0.1]))
-        assert inits['test_obj1_b'] == approx(np.array([0.2]))
+        assert len(package.inits) == 2
+        assert len(package._state) == 2
+        assert len(package._ret) == 2
+        assert package._state_vec == approx(np.array([0.0, 0.1, 0.2]))
+        assert package._ret_vec == approx(np.zeros(3))
 
     def test_step(self):
         inits = {'test_obj1_a': np.array([0.0, 0.1]),
                  'test_obj1_b': np.array([0.2])}
         package = Package()
         mo = MockObject()
-        component = Component('test_obj1', mo)
-        component.add_var('test_obj1_a', np.array([0.0, 0.1]))
-        component.add_var('test_obj1_b', np.array([0.2]))
-        package.add_component(component, 'get_derivs')
+        package.add_component(mo, 'test_obj1', 'get_derivs')
         package.add_stage_call('test_obj1', 'step')
         vec = np.array([1.0, 2.0, 3.0])
         package.setup(inits)
         package.step(vec)
-        obj_states = package.components['test_obj1'].obj.states[0]
+        obj_states = package.components['test_obj1'].states[0]
         assert obj_states['test_obj1_a'] == approx(np.array([1.0, 2.0]))
         assert obj_states['test_obj1_b'] == approx(np.array([3.0]))
         
@@ -215,15 +162,15 @@ class Test_Performance():
     def test_steps(self):
         package = Package()
         mo = MockObject2()
-        component = Component('test_obj1', mo)
-        component.add_var('test_obj1_a', np.linspace(0, 3, 3))
-        component.add_var('test_obj1_b', np.linspace(3, 6, 3))
-        component.add_var('test_obj1_c', np.linspace(6, 9, 3))
-        component.add_var('test_obj1_d', np.linspace(9, 12, 3))
-        package.add_component(component, 'step')
-        inits = package.get_inits()
+        inits = {
+            'test_obj1_a': np.linspace(0, 3, 3),
+            'test_obj1_b': np.linspace(3, 6, 3),
+            'test_obj1_c': np.linspace(6, 9, 3),
+            'test_obj1_d': np.linspace(9, 12, 3),
+        }
+        package.add_component(mo, 'test_obj1', 'step')
         package.setup(inits)
-        vec = package._state
+        vec = package.init_vec
         
         globals_dct = {'package': package, 'vec': vec}
 
