@@ -43,7 +43,7 @@ def get_package(time_points, positions):
     return package
 
 def solve(package, n=100001, t_end=1.0):
-    framerate = n / t_end
+    framerate = (n - 1) / t_end
     ode_integrator = npsolve.solvers.ODEIntegrator(framerate=framerate)
     dct = ode_integrator.run(package, t_end)
     return dct

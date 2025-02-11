@@ -114,6 +114,7 @@ def plot_xs(dct):
     plt.xlabel("time")
     plt.ylabel("x")
     plt.legend(loc=3)
+    plt.show()
 
 
 def plot_trajectories(dct):
@@ -126,6 +127,7 @@ def plot_trajectories(dct):
     plt.ylim(-1.2, 1.2)
     plt.gca().set_aspect("equal")
     plt.legend(loc=2)
+    plt.show()
 
 
 def plot_distance_check(dct):
@@ -135,6 +137,7 @@ def plot_distance_check(dct):
     plt.plot(dct["time"], dist)
     plt.xlabel("time")
     plt.ylabel("length")
+    plt.show()
 
 
 def execute():
@@ -142,3 +145,7 @@ def execute():
     plot_xs(dct)
     plot_trajectories(dct)
     plot_distance_check(dct)
+
+
+if __name__ == '__main__':
+    execute()
