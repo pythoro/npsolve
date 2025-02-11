@@ -517,6 +517,9 @@ class Package:
         self._components = {}
         self._deriv_methods = {}
 
+    def __getitem__(self, component_name: str) -> obj:
+        return self._components[component_name]
+
     @property
     def components(self):
         return self._components

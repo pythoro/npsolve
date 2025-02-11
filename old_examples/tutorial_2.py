@@ -82,7 +82,11 @@ def plot(dct):
     plt.ylim(0, 6)
     plt.xlabel('x')
     plt.ylabel('y')
+    plt.show()
     
 def execute():
     dct = run()
     plot(dct)
+
+if __name__ == '__main__':
+    execute()

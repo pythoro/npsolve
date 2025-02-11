@@ -54,15 +54,16 @@ def run(t_end=1.0, n=100001):
 
 
 def plot(dct, particle):
-    plt.figure()
+    plt.figure(1)
     plt.plot(dct['position'][:,0], dct['position'][:,1], linewidth=0.5)
     plt.scatter(particle.positions[:,0], particle.positions[:,1], c='r',
                 marker='.')
     plt.xlabel('x')
     plt.ylabel('y')
+    plt.show()
 
 def plot_vs_time(dct, particle):
-    fig, axes = plt.subplots(2, 1, sharex=True)
+    fig, axes = plt.subplots(2, 1, sharex=True, num=2)
     axes[0].plot(dct['time'], dct['position'][:,0], linewidth=0.5)
     axes[0].scatter(particle.time_points, particle.positions[:,0], c='r',
                 marker='.')
@@ -73,9 +74,12 @@ def plot_vs_time(dct, particle):
                 marker='.')
     axes[1].set_xlabel('time')
     axes[1].set_ylabel('y')
+    plt.show()
     
 def execute():
     particle, dct = run()
     plot(dct, particle)
     plot_vs_time(dct, particle)
-    
+
+if __name__ == '__main__':
+    execute()
