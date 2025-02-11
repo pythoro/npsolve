@@ -30,12 +30,12 @@ class Slider:
     def set_F_tether(self, F_tether):
         self._F_tether = F_tether
 
-    def pos(self, state):
-        """The location of the tether that connects to the pendulum"""
+    def pos(self, state, t):
+        """The location of the tether connection."""
         return state[SPOS]
 
-    def vel(self, state):
-        """The location of the tether that connects to the pendulum"""
+    def vel(self, state, t):
+        """The velocity of the tether connection."""
         return state[SVEL]
 
     def F_sinusoid(self, t):
@@ -85,12 +85,12 @@ class Pendulum(npsolve.Partial):
     def set_F_tether(self, F_tether):
         self._F_tether = F_tether
 
-    def pos(self, state):
-        """The location of the tether that connects to the pendulum"""
+    def pos(self, state, t):
+        """The location of the tether connection."""
         return state[PPOS]
 
-    def vel(self, state):
-        """The location of the tether that connects to the pendulum"""
+    def vel(self, state, t):
+        """The velocity of the tether connection."""
         return state[PVEL]
 
     def F_gravity(self):
@@ -115,10 +115,10 @@ class Assembly:
     def set_tether_forces(self, state, t, log): 
         slider = self._slider
         pendulum = self._pendulum
-        slider_pos = slider.pos(state)
-        slider_vel = slider.vel(state)
-        pendulum_pos = pendulum.pos(state)
-        pendulum_vel = pendulum.vel(state)
+        slider_pos = slider.pos(state, t)
+        slider_vel = slider.vel(state, t)
+        pendulum_pos = pendulum.pos(state, t)
+        pendulum_vel = pendulum.vel(state, t)
         F_tether = self._tether.F_tether(slider_pos, slider_vel, pendulum_pos,
                                       pendulum_vel)
         slider.set_F_tether(F_tether)

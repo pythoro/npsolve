@@ -50,6 +50,7 @@ def plot_trajectories(dct):
     plt.ylim(-2.5, 12.5)
     plt.gca().set_aspect('equal')
     plt.legend(loc=2)
+    plt.show()
 
 
 def plot_distance_check(dct):
@@ -59,9 +60,13 @@ def plot_distance_check(dct):
     plt.plot(dct['time'], dist)
     plt.xlabel('time')
     plt.ylabel('length')
+    plt.show()
 
 
 def execute():
     dct = run()
     plot_trajectories(dct)
     plot_distance_check(dct)
+
+if __name__ == '__main__':
+    execute()
