@@ -11,17 +11,15 @@ it difficult to use an object oriented approach to performing the calculations.
 Usually, we end up with script-like code that looses many of the benefits
 of object-oriented programming.
 
-The npsolve framework links a solver with multiple classes that handle the
-calculations for each step in the algorithm. It allows different parts of 
-the calculations to be encapsulated and polymorphic, and makes the code 
-much easier to modify and maintain.
+The npsolve framework sets up an intermediate object, a Package, that 
+translates between unnamed vectors and object-oriented classes. It facilitates
+both simple and complex inter-dependencies and keeps code modular and 
+maintainable.
 
 Advantages:
-* No-fuss management of variables and their initial conditions
-* Updated state automatically shared with all objects
-* Calls between classes possible using dependency injection
-* Optional caching methods prevent redundant calculations
 * Introduces very little overhead in calculation time
+* Explicit, customisable steps in the calculation for each time step
+* Able to be used with any solver
 
 
 ## Basic usage tutorial
@@ -30,264 +28,202 @@ Let's use npsolve to do some integration through time, like you would to
 solve an ODE. Instead of equations, though, we're using class methods. The
 code for all the tutorials is available in the repository under 'examples'.
 
-First, setup some classes that you want to do calculations with. We do this
-by using the `add_var` method to setup variables and their initial values.
+We'll assume there is some interdependency between different components. To
+begin, let's set up some constaint variable names.
 
 ```python
 
 import numpy as np
 import npsolve
-
-class Component1(npsolve.Partial):
-    def __init__(self):
-        super().__init__()  # Don't forget to call this!
-        self.add_var("position1", init=0.1)
-        self.add_var("velocity1", init=0.3)
-    
-
-class Component2(npsolve.Partial):
-    def __init__(self):
-        super().__init__()  # Don't forget to call this!
-        self.add_var("component2_value", init=-0.1)
-
-```
-
-All the variables are made available to all Partial instances automatically
-through their `state` attribute. It's a dictionary. The `add_var` method 
-sets initial values into the instance's state dictionary. Later, the `Solver`
-will ultimately replace the `state` attribute with a new dictionary that
-contains all variables from all the Partial classes.
-
-Next, we'll tell these classes how to do some calculations during each time
-step. The `step` method is called automatically and expects a dictionary of
-return values (e.g. derivatives). We'll use that one here. The state
-dictionary is given again as the first argument, but we're going to use the
-internal `state` attribute instead. So, we'll add some more methods:
-
-```python
-
-class Component1(npsolve.Partial):
-    def __init__(self):
-        super().__init__()  # Don't forget to call this!
-        self.add_var("position1", init=0.1)
-        self.add_var("velocity1", init=0.3)
-
-    def step(self, state_dct, t, *args):
-        """Called by the solver at each time step
-
-        Calculate acceleration based on the net component2_value.
-        """
-        acceleration = 1.0 * self.state["component2_value"]
-        derivatives = {
-            "position1": self.state["velocity1"],
-            "velocity1": acceleration,
-        }
-        return derivatives
-
-
-class Component2(npsolve.Partial):
-    def __init__(self):
-        super().__init__()  # Don't forget to call this!
-        self.add_var("component2_value", init=-0.1)
-
-    def calculate(self, t):
-        """Some arbitrary calculations based on current time t
-        and the position at that time calculated in Component1.
-        This returns a derivative for variable 'c'
-        """
-        dc = 1.0 * np.cos(2 * t) * self.state["position1"]
-        derivatives = {"component2_value": dc}
-        return derivatives
-
-    def step(self, state_dct, t, *args):
-        """Called by the solver at each time step"""
-        return self.calculate(t)
-
-```
-
-Now, we'll set up the solver. For this example, we'll use the odeint solver
-from Scipy (npsolve has a more convenient Solver class).
-Here's what it looks like:
-
-
-```python
-
-from scipy.integrate import odeint
-
-class Solver(npsolve.Solver):
-    def solve(self, t_end=10):
-        self.npsolve_init()  # Initialise
-        self.t_vec = np.linspace(0, t_end, 1001)
-        result = odeint(self.step, self.npsolve_initial_values, self.t_vec)
-        return result
-
-```
-
-Let's look at what's going on in the `solve` method. By default, Solvers
-have a `step` method that's ready to use. (They also have a `one_way_step`
-method that doesn't expect return values from the Partials, and a `tstep` 
-method that expects a time value as the first argument.) After initialisation,
-the initial values set by the Partial classes are captured in the
-`npsolve_initial_values` attribute. By default, the Solver's `step` method
-returns a vector of all the return values, the same size as the Solver's
-`npsolve_initial_values` array. So most of the work is done for us here
-already. 
-
-Note here that we don't need to know anything about the model or
-the elements in the model. This allows us to decouple the model and Partials
-from the solver. We can pass in different models, or pass models to different
-solvers. We can make models with different components. It's flexible and easy
-to maintain!
-
-To run, we just have to instantiate the Solver and Partial instances,
-then pass a list or dictionary of the Partial instances to the
-`connect_partials` method of the Solver. They'll link up automatically.
-Or, you can link them individually using the `connect_partial` method.
-
-
-```python
-    
-def run():
-    solver = Solver()
-    partials = [Component1(), Component2()]
-    solver.connect_partials(partials)
-    res = solver.solve()
-    return res, solver
-```
-
-Let's set up a plot to see the results. Use the `npsolve_slices` attribute of
-the Solver to get the right columns. (The npsolve.Solver class makes accessing
-results more convenient by splitting them into a dictionary.)
-
-```python
-
 import matplotlib.pyplot as plt
 
-def plot(res, solver):
-    s = solver
-    slices = s.npsolve_slices
-    plt.figure()
-    plt.plot(s.t_vec, res[:, slices["position1"]], label="position1")
-    plt.plot(s.t_vec, res[:, slices["velocity1"]], label="velocity1")
-    plt.plot(
-        s.t_vec, res[:, slices["component2_value"]], label="component2_value"
-    )
-    plt.legend()
+# Unique variable names
+COMP1_POS = 'position1'
+COMP1_VEL = 'velocity1'
+COMP2_VALUE = 'component2_value'
+COMP2_FORCE = 'comp2_force'
 
 ```
 
-Run it and see what happens!
+Now we'll set up a class for each component in our model.
 
 ```python
 
-res, s = run()
-plot(res, s)
+class Component1():
+    def set_comp2_force(self, force):
+        self._comp2_force = force
 
-```
+    def get_pos(self, state):
+        return state[COMP1_POS]
 
-### Calls between partials
-To facilitate calls between components, use dependency injection. Let's 
-illustrate by using methods instead of instead of using the values in the
-state dictionary like we did above. So, let's modify our two classes like 
-this:
-
-```python
-
-class Component1(npsolve.Partial):
-    def __init__(self):
-        super().__init__()  # Don't forget to call this!
-        self.add_var("position1", init=0.1)
-        self.add_var("velocity1", init=0.3)
-
-    def get_position(self):
-        """Returns a value
-        
-        In this example, it is just a state variable, but it could be much
-        more complex.
-        """
-        return self.state['position1']
-
-    def connect(self, component2, reverse=True):
-        """Connect with a Component2 instance"""
-        self._component2 = component2
-        if reverse:
-            component2.connect(self, reverse=False)
-
-    def step(self, state_dct, t, *args):
+    def step(self, state, t, log):
         """Called by the solver at each time step
 
         Calculate acceleration based on the net component2_value.
         """
-        acceleration = 1.0 * self._component2.get_value()
+        acceleration = self._comp2_force * 1.0
         derivatives = {
-            "position1": self.state["velocity1"],
+            "position1": state[COMP1_VEL],
             "velocity1": acceleration,
         }
         return derivatives
 
+class Component2:
+    def get_force(self, state):
+        return 1.0 * state[COMP2_VALUE]
 
-class Component2(npsolve.Partial):
-    def __init__(self):
-        super().__init__()  # Don't forget to call this!
-        self.add_var("component2_value", init=-0.1)
+    def set_comp1_pos(self, pos):
+        self._comp1_pos = pos
 
-    def get_value(self):
-        """Returns a value
-        
-        In this example, it is just a state variable, but it could be much
-        more complex.
-        """
-        return self.state['component2_value']
-
-    def connect(self, component1, reverse=True):
-        """Connect with a Component1 instance"""
-        self._component1 = component1
-        if reverse:
-            component1.connect(self, reverse=False)
-
-    def calculate(self, t):
+    def calculate(self, state, t):
         """Some arbitrary calculations based on current time t
         and the position at that time calculated in Component1.
         This returns a derivative for variable 'c'
         """
-        dc = 1.0 * np.cos(2 * t) * self._component1.get_position()
-        derivatives = {"component2_value": dc}
+        dc = 1.0 * np.cos(2 * t) * self._comp1_pos
+        derivatives = {COMP2_VALUE: dc}
         return derivatives
 
-    def step(self, state_dct, t, *args):
+    def step(self, state, t, log):
         """Called by the solver at each time step"""
-        return self.calculate(t)
+        return self.calculate(state, t)
 
 ```
 
-Before we run the solver, we just need to inject the dependency by calling
-the 'connect' methods we've created. So, now our run function becomes:
+Note that external dependencies will be injected via the `set_comp1_pos` and 
+`set_comp2_force` methods. The classes also provide some methods to return
+certain parameters in the `get_pos` and `get_force` methods.
+
+They each have a method we've called 'step', which will be called by the
+Package. Whatever their name, these methods must accept three (or more) 
+parameters, `state`, `t`, and `log`. These are passed in by the Package
+at each time step.
+
+- state (dict): A dictionary that contains the current values for all state
+    variables. We're get to how they are set up soon.
+- t (float): The current time step.
+- log (dict | None): If log is not None, usually at the completion of a
+    time step, this log dictionary can be added to to log additional values.
+
+Next, we'll make a class to handle inter-dependencies.
+
+```python
+
+class Assembly:
+    """Handle inter-dependencies."""
+    def __init__(self, comp1, comp2):
+        self.comp1 = comp1
+        self.comp2 = comp2
+
+    def precalcs(self, state, t, log):
+        """Inject dependencies for later calculations in 'step' methods."""
+        comp1 = self.comp1
+        comp2 = self.comp2
+        comp1_pos = comp1.get_pos(state)
+        comp2_force = comp2.get_force(state)
+        if log:
+            # Log whatever we want here into a dictionary.
+            log[COMP2_FORCE] = comp2_force
+        comp1.set_comp2_force(comp2_force)
+        comp2.set_comp1_pos(comp1_pos)
+
+```
+
+We're simply making a class that accepts instances of our two components,
+and then provides a method that injects their inter-dependencies, which
+we've called `precalcs` in this case. This method must accept three (or more) 
+parameters, `state`, `t`, and `log` because it will be called by the
+Package. 
+
+Now, we need to make a function to create a Package instance.
+
+```python
+    
+def get_package():
+    component1 = Component1()
+    component2 = Component2()
+    assembly = Assembly(component1, component2)
+    package = npsolve.Package()
+    package.add_component(component1, 'comp1', 'step')
+    package.add_component(component2, 'comp2', 'step')
+    package.add_component(assembly, 'assembly', None)
+    package.set_stage_calls(
+        [('assembly', 'precalcs')]
+    )
+    return package
+
+```
+
+Here, we're creating instances of our components and our assembly.
+Then, we're adding them to a new Package instance. When we use
+`add_component`, we pass in the instance object, a unique name, and the
+method to call to finish each time step and get state derivatives. If the
+derivatives method is set to None, the derivatives will default to 0.0.
+
+We're also setting up stage calls that happen prior to the final calls to
+get derivatives. We can pass in many different calls to different components.
+Here, we just specify one call to the `precalcs` method in the component
+we've named 'assembly'.
+
+Note also that we've set the final derivative call for the assembly 
+component to None, so it won't be called at the end of the current timestep.
+
+To perform the integration, we'll use the inbuilt ODEIntegrator class.
+
+```python
+
+def solve(package, t_end=10):
+    ode_integrator = npsolve.solvers.ODEIntegrator()
+    dct = ode_integrator.run(package, t_end)
+    return dct
+
+```
+
+Now, we are ready to run. To run, we need to create a dictionary that 
+contains initial values for all our state variables. Any missing ones
+will not be found by any components that depend on them. Then we setup
+the Package by passing the initial values dictionary to its `setup` method.
 
 ```python
 
 def run():
-    solver = Solver()
-    component1 = Component1()
-    component2 = Component2()
-    component1.connect(component2)  # Inject the dependency
-    component2.connect(component1)  # Inject the dependency
-    partials = [component1, component2]
-    solver.connect_partials(partials)
-    res = solver.solve()
-    return res, solver
+    package = get_package()
+    inits = {COMP1_POS: 0.1,
+             COMP1_VEL: 0.3,
+             COMP2_VALUE: -0.1}
+    package.setup(inits)
+    dct = solve(package)
+    return dct
 
 ```
 
+Lastly, we'll add functions to plot results and execute the script.
 
-### Nested Partial instances
-You can also nest Partial instances. Under the hood, `connect_partials` passes
-the Solver to the `connect_solver` method of each Partial instance. Just
-overwrite the parent Partial instance's `connect_solver` method to pass
-the solver instance on to the `connect_solver` method on the children.
+```python
 
+def plot(dct):
+    plt.figure(1)
+    dct2 = dct.copy()
+    t_vec = dct2.pop('time')
+    for var_name, values in dct2.items():
+        plt.plot(t_vec, values, label=var_name)
+    plt.legend()
+    plt.show()
+
+
+def execute():
+    dct = run()
+    plot(dct)
+
+
+if __name__ == '__main__':
+    execute()
+
+```
+
+Run it and see the results!
 
 ## Tutorials
 
 Check out the tutorials in the examples folder to learn the basics and 
-learn about some more advanced features like the Solver class, the Timeseries
-class, caching, and logging extra values.
+learn about some more advanced features like the the soft_functions.
