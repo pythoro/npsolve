@@ -4,6 +4,8 @@ Created on Sat Sep 14 08:31:52 2019
 
 @author: Reuben
 
+This module is deprecated and will be removed in a future version!
+
 This module contains helper functions and methods that help you get the most
 from npsolve.
 
