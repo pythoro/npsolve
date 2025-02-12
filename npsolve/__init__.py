@@ -5,8 +5,11 @@ Created on Mon Aug  5 20:46:26 2019
 @author: Reuben
 """
 
-from .core import Partial, Solver, Package
-from .cache import multi_cached, mono_cached
+from .legacy.legacy_core import Partial, Solver
+from .legacy.legacy_cache import multi_cached, mono_cached
+from .legacy.legacy_solver import Integrator
+from .legacy.legacy_utils import *
+
+from .core import Package
 from . import soft_functions
-from .utils import *
 from . import solvers

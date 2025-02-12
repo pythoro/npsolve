@@ -8,8 +8,8 @@ Created on Mon Aug  5 20:43:48 2019
 import unittest
 import numpy as np
 
-from npsolve.core import Partial
-from npsolve.cache import multi_cached, mono_cached
+from npsolve import Partial
+from npsolve import multi_cached, mono_cached
 
 
 class P(Partial):

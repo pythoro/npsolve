@@ -13,7 +13,7 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
 import npsolve
-from npsolve.utils import Timeseries
+from npsolve.legacy.legacy_utils import Timeseries
 
 
 class Particle(npsolve.Partial):
