@@ -4,6 +4,8 @@ Created on Sat Sep 14 08:31:52 2019
 
 @author: Reuben
 
+This module is deprecated and will be removed in a future version!
+
 This module contains helper functions and methods that help you get the most
 from npsolve.
 
@@ -12,6 +14,7 @@ from npsolve.
 
 from collections import defaultdict
 import numpy as np
+from warnings import warn
 try:
     from scipy.interpolate import splrep, splev, splder, splantider
     scipy_found = True
@@ -93,6 +96,8 @@ class Timeseries():
     
     """
     def __init__(self, xs, ys):
+        warn("Timeseries class is Deprecated. Use scipy CubicSpline or "
+             + "make_interp_spline instead.")
         if not scipy_found:
             raise ImportError('Scipy needed for Timeseries class.')
         self.xs = xs

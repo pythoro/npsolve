@@ -4,6 +4,8 @@ Created on Wed Aug  7 07:06:54 2019
 
 @author: Reuben
 
+This module is deprecated and will be removed in a future version!
+
 Simple caching inspired by functools.lru_cache.
 
 Sometimes, Partial instances may need to call each other (via a fastwire fetch

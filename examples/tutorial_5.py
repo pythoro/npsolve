@@ -9,40 +9,66 @@ attaches the pendulum to a particle that travels through a trajectory.
 
 """
 
+import npsolve
 import numpy as np
 import matplotlib.pyplot as plt
-from tutorial_3 import Particle
-from tutorial_4 import Pendulum, Solver
+from tutorial_3 import Particle, POS
+from tutorial_4 import Pendulum, solve, Tether, Assembly, PPOS, PVEL
 
 
 class Particle2(Particle):
-        
-    def pivot(self, t):
-        velocity = np.array([self.xts(t, der=1), self.yts(t, der=1)])
-        return self.state['position'], velocity
+
+    def set_F_tether(self, F_tether):
+        pass
+
+    def pos(self, state, t):
+        """The location of the tether connection."""
+        return state[POS]
+
+    def vel(self, state, t):
+        """The velocity of the tether connection."""
+        velocity = np.array([self._xts(t, nu=1), self._yts(t, nu=1)])
+        return velocity
 
 
-def set_init_condition(particle, pendulum):
-    init_particle_pos = particle.npsolve_vars['position']['init']
-    init_pendulum_pos = init_particle_pos - np.array([0.0, 1.0])
-    pendulum.set_init('p_pos', init_pendulum_pos)
+def get_package():
+    np.random.seed(0)
+    time_points = np.linspace(0, 1, 51)
+    positions = np.random.rand(51, 2) * 10
+    particle = Particle2(time_points, positions)
+    pendulum = Pendulum()
+    tether = Tether(k=1e7, c=1e4)
+    assembly = Assembly(particle, pendulum, tether)
+    package = npsolve.Package()
+    package.add_component(particle, 'particle', 'step')
+    package.add_component(pendulum, 'pendulum', 'get_derivs')
+    package.add_component(tether, 'tether', None)
+    package.add_component(assembly, 'assembly', None)
+    package.add_stage_call('assembly', 'set_tether_forces')
+    return package
 
-def run(k=1e7, c=1e4, t_end=1.0, n=100001):
-    particle = Particle2()
-    pendulum = Pendulum(k=k, c=c)
-    pendulum.connect_to_slider(particle)
-    set_init_condition(particle, pendulum)
-    partials = [particle, pendulum]
-    solver = Solver()
-    solver.connect(partials)
-    return solver.solve(t_end=t_end, n=n)
+
+def get_inits(package):
+    slider_pos = package['particle'].get_init_pos()
+    pend_mass = package['pendulum'].mass
+    inits = {POS: slider_pos,
+             PPOS: package['tether'].get_pendulum_init(slider_pos, pend_mass),
+             PVEL: np.zeros(2)}
+    return inits
+
+def run(t_end=1.0, n=100001):
+    package = get_package()
+    inits = get_inits(package)
+    package.setup(inits)
+    dct = solve(package, n, t_end)
+    return dct
 
 
 def plot_trajectories(dct):
     plt.figure()
-    plt.plot(dct['position'][:,0], dct['position'][:,1], linewidth=1.0,
+    plt.plot(dct[POS][:,0], dct[POS][:,1], linewidth=1.0,
              label='particle')
-    plt.plot(dct['p_pos'][:,0], dct['p_pos'][:,1],  linewidth=1.0,
+    plt.plot(dct[PPOS][:,0], dct[PPOS][:,1],  linewidth=1.0,
              label='pendulum')
     plt.xlabel('x')
     plt.ylabel('y')
@@ -50,18 +76,23 @@ def plot_trajectories(dct):
     plt.ylim(-2.5, 12.5)
     plt.gca().set_aspect('equal')
     plt.legend(loc=2)
+    plt.show()
 
 
 def plot_distance_check(dct):
     plt.figure()
-    diff = dct['p_pos'] - dct['position']
+    diff = dct[PPOS] - dct[POS]
     dist = np.linalg.norm(diff, axis=1)
     plt.plot(dct['time'], dist)
     plt.xlabel('time')
     plt.ylabel('length')
+    plt.show()
 
 
 def execute():
     dct = run()
     plot_trajectories(dct)
     plot_distance_check(dct)
+
+if __name__ == '__main__':
+    execute()
