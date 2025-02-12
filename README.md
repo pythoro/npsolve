@@ -17,6 +17,8 @@ both simple and complex inter-dependencies and keeps code modular and
 maintainable.
 
 Advantages:
+* Avoids challenges tracking array indices
+* Allows for modular, more maintainable code
 * Introduces very little overhead in calculation time
 * Explicit, customisable steps in the calculation for each time step
 * Able to be used with any solver
@@ -227,3 +229,57 @@ Run it and see the results!
 
 Check out the tutorials in the examples folder to learn the basics and 
 learn about some more advanced features like the the soft_functions.
+
+## Important notes
+There are a few things to know when using npsolve.
+
+### Never mutate the state
+
+Each value in the state dictionary is a read-only view of a single numpy
+array. These views are setup in the `Package.setup` method prior to 
+integration.
+
+For performance, the state dict is a normal dict, which can be mutated.
+By convention, never do that. In other words, don't code something like...
+
+
+```python
+
+    def step(self, state, t, log):
+        """Don't mutate the state like this!"""
+        state[COMP1_VEL] = 7.0  # This will replace the numpy view.
+
+```
+
+### State values are always np.ndarrays
+
+Because the state dict values are numpy views, even scalars are arrays of
+shape (1,). Be aware that numpy arrays propagate where they are used, so
+at times, you may want to convert them to real scalars. For example:
+
+```python
+
+    def step(self, state, t, log):
+        """How to get a scalar (float)."""
+        scalar_val = state[COMP1_VEL][0]  # Get the scalar float
+
+```
+
+### Avoid discontinuities in time
+
+Discontinuities in time can cause many solvers to struggle. To get around
+this problem, npsolve offers a `soft_functions` module with a range of 
+functions designed to smooth our discontinuities. 
+
+For example, instead of a binary on-off change, you can use 
+`soft_functions.step` to transition smoothly. The change can happen over 
+a very small time period and the solver will refine the timestep around the
+change, which keeps the approximation error small.
+
+
+### Respect encapsulation
+
+Again for performance reasons, the full state dict is passed to all
+components. This means that a component could access state information
+supplied by other components. While this is possible, it's usually a sign
+that the code should be refactored to better encapsulate each component.
