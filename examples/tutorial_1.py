@@ -11,12 +11,13 @@ import npsolve
 import matplotlib.pyplot as plt
 
 # Unique variable names
-COMP1_POS = 'position1'
-COMP1_VEL = 'velocity1'
-COMP2_VALUE = 'component2_value'
-COMP2_FORCE = 'comp2_force'
+COMP1_POS = "position1"
+COMP1_VEL = "velocity1"
+COMP2_VALUE = "component2_value"
+COMP2_FORCE = "comp2_force"
 
-class Component1():
+
+class Component1:
     def set_comp2_force(self, force):
         self._comp2_force = force
 
@@ -34,6 +35,7 @@ class Component1():
             "velocity1": acceleration,
         }
         return derivatives
+
 
 class Component2:
     def get_force(self, state):
@@ -58,6 +60,7 @@ class Component2:
 
 class Assembly:
     """Handle inter-dependencies."""
+
     def __init__(self, comp1, comp2):
         self.comp1 = comp1
         self.comp2 = comp2
@@ -80,12 +83,10 @@ def get_package():
     component2 = Component2()
     assembly = Assembly(component1, component2)
     package = npsolve.Package()
-    package.add_component(component1, 'comp1', 'step')
-    package.add_component(component2, 'comp2', 'step')
-    package.add_component(assembly, 'assembly', None)
-    package.set_stage_calls(
-        [('assembly', 'precalcs')]
-    )
+    package.add_component(component1, "comp1", "step")
+    package.add_component(component2, "comp2", "step")
+    package.add_component(assembly, "assembly", None)
+    package.set_stage_calls([("assembly", "precalcs")])
     return package
 
 
@@ -97,9 +98,7 @@ def solve(package, t_end=10):
 
 def run():
     package = get_package()
-    inits = {COMP1_POS: 0.1,
-             COMP1_VEL: 0.3,
-             COMP2_VALUE: -0.1}
+    inits = {COMP1_POS: 0.1, COMP1_VEL: 0.3, COMP2_VALUE: -0.1}
     package.setup(inits)
     dct = solve(package)
     return dct
@@ -108,7 +107,7 @@ def run():
 def plot(dct):
     plt.figure(1)
     dct2 = dct.copy()
-    t_vec = dct2.pop('time')
+    t_vec = dct2.pop("time")
     for var_name, values in dct2.items():
         plt.plot(t_vec, values, label=var_name)
     plt.legend()
@@ -120,6 +119,5 @@ def execute():
     plot(dct)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     execute()
-

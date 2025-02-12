@@ -1,6 +1,6 @@
 """Legacy Partial and Solver classes.
 
-These are now deprecated. For new code, use replacements in the core 
+These are now deprecated. For new code, use replacements in the core
 module.
 
 """
@@ -448,4 +448,3 @@ class Solver:
             )
 
     connect = connect_partials
-

@@ -1,4 +1,3 @@
-
 """Illustrates using scipy odeint solver instead of npsolve ODEIntegrator."""
 
 from examples.tutorial_1 import get_package
@@ -10,11 +9,10 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
 # Unique variable names
-COMP1_POS = 'position1'
-COMP1_VEL = 'velocity1'
-COMP2_VALUE = 'component2_value'
-COMP2_FORCE = 'comp2_force'
-
+COMP1_POS = "position1"
+COMP1_VEL = "velocity1"
+COMP2_VALUE = "component2_value"
+COMP2_FORCE = "comp2_force"
 
 
 def solve(package, t_end=10):
@@ -25,9 +23,7 @@ def solve(package, t_end=10):
 
 def run():
     package = get_package()
-    inits = {COMP1_POS: 0.1,
-             COMP1_VEL: 0.3,
-             COMP2_VALUE: -0.1}
+    inits = {COMP1_POS: 0.1, COMP1_VEL: 0.3, COMP2_VALUE: -0.1}
     package.setup(inits)
     t_vec, result = solve(package)
     return package, t_vec, result
@@ -46,5 +42,6 @@ def execute():
     package, t_vec, result = run()
     plot(package, t_vec, result)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     execute()

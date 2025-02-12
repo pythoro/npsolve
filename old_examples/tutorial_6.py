@@ -15,35 +15,36 @@ import npsolve
 from tutorial_4 import Slider, Pendulum
 
 from npsolve.solvers import FINAL, STOP
-status = npsolve.get_status('demos_status')
-logger = npsolve.get_logger('demos_logger')
+
+status = npsolve.get_status("demos_status")
+logger = npsolve.get_logger("demos_logger")
 
 
 class Pendulum2(Pendulum):
     def step(self, state_dct, t, *args):
-        ''' Called by the solver at each time step 
-        Calculate acceleration based on the 
-        '''
+        """Called by the solver at each time step
+        Calculate acceleration based on the
+        """
         F_pivot = self.F_pivot(t)
         F_gravity = self.F_gravity()
         F_net = F_pivot + F_gravity
         acceleration = F_net / self.mass
         if status[FINAL]:
-            logger['F_pivot'].append(F_pivot)
-            logger['acceleration'].append(acceleration)
+            logger["F_pivot"].append(F_pivot)
+            logger["acceleration"].append(acceleration)
         if F_pivot[1] > 90.0:
             status[STOP] = True
-        derivatives = {'p_pos': state_dct['p_vel'],
-                       'p_vel': acceleration}
+        derivatives = {"p_pos": state_dct["p_vel"], "p_vel": acceleration}
         return derivatives
+
 
 def run(freq=1.0, t_end=20.0, n=100001):
     slider = Slider(freq=freq)
     pendulum = Pendulum2()
     slider.connect_to_pendulum(pendulum)
-    solver = npsolve.solvers.Integrator(status=status,
-                                        logger=logger,
-                                        framerate=n//t_end)
+    solver = npsolve.solvers.Integrator(
+        status=status, logger=logger, framerate=n // t_end
+    )
     partials = [slider, pendulum]
     solver.connect(partials)
     return solver.run(t_end)
@@ -51,25 +52,27 @@ def run(freq=1.0, t_end=20.0, n=100001):
 
 def plot_pivot_force(dct):
     plt.figure()
-    plt.plot(dct['F_pivot'][:,0], dct['F_pivot'][:,1], label='F_pivot_y')
-    plt.xlabel('Force in x')
-    plt.ylabel('Force in y')
+    plt.plot(dct["F_pivot"][:, 0], dct["F_pivot"][:, 1], label="F_pivot_y")
+    plt.xlabel("Force in x")
+    plt.ylabel("Force in y")
     plt.legend(loc=3)
+
 
 def plot_F_pivot_vs_time(dct):
     plt.figure()
-    plt.plot(dct['time'], dct['F_pivot'][:,0], label='F_pivot_x')
-    plt.plot(dct['time'], dct['F_pivot'][:,1], label='F_pivot_y')
-    plt.xlabel('time')
-    plt.ylabel('Pivot force')
+    plt.plot(dct["time"], dct["F_pivot"][:, 0], label="F_pivot_x")
+    plt.plot(dct["time"], dct["F_pivot"][:, 1], label="F_pivot_y")
+    plt.xlabel("time")
+    plt.ylabel("Pivot force")
     plt.legend(loc=3)
+
 
 def plot_acc(dct):
     plt.figure()
-    plt.plot(dct['time'], dct['p_vel'][:,0], label='x_velocity')
-    plt.plot(dct['time'], dct['acceleration'][:,0], label='x_acceleration')
-    plt.xlabel('time')
-    plt.ylabel('x-acceleration')
+    plt.plot(dct["time"], dct["p_vel"][:, 0], label="x_velocity")
+    plt.plot(dct["time"], dct["acceleration"][:, 0], label="x_acceleration")
+    plt.xlabel("time")
+    plt.ylabel("x-acceleration")
     plt.legend(loc=3)
 
 
@@ -78,4 +81,3 @@ def execute(freq=1.0):
     plot_pivot_force(dct)
     plot_F_pivot_vs_time(dct)
     plot_acc(dct)
-

@@ -15,8 +15,9 @@ from tutorial_4 import Slider, Pendulum, Tether, Assembly, PPOS, PVEL
 from tutorial_4 import get_inits, solve
 
 from npsolve.solvers import STOP
-status = npsolve.get_status('demos_status')
-logger = npsolve.get_logger('demos_logger')
+
+status = npsolve.get_status("demos_status")
+logger = npsolve.get_logger("demos_logger")
 
 
 class Pendulum2(Pendulum):
@@ -27,12 +28,13 @@ class Pendulum2(Pendulum):
         F_net = self._F_tether + self.F_gravity()
         acceleration = F_net / self.mass
         if log:
-            log['F_tether'] = self._F_tether
-            log['acceleration'] = acceleration
+            log["F_tether"] = self._F_tether
+            log["acceleration"] = acceleration
             if self._F_tether[1] > 24.0:
                 log[STOP] = True
         derivatives = {PPOS: state[PVEL], PVEL: acceleration}
         return derivatives
+
 
 def get_package():
     slider = Slider()
@@ -40,12 +42,13 @@ def get_package():
     tether = Tether()
     assembly = Assembly(slider, pendulum, tether)
     package = npsolve.Package()
-    package.add_component(slider, 'slider', 'get_derivs')
-    package.add_component(pendulum, 'pendulum', 'get_derivs')
-    package.add_component(tether, 'tether', None)
-    package.add_component(assembly, 'assembly', None)
-    package.add_stage_call('assembly', 'set_tether_forces')
+    package.add_component(slider, "slider", "get_derivs")
+    package.add_component(pendulum, "pendulum", "get_derivs")
+    package.add_component(tether, "tether", None)
+    package.add_component(assembly, "assembly", None)
+    package.add_stage_call("assembly", "set_tether_forces")
     return package
+
 
 def run(t_end=20.0, n=100001):
     package = get_package()
@@ -54,29 +57,32 @@ def run(t_end=20.0, n=100001):
     dct = solve(package, n, t_end)
     return dct
 
+
 def plot_pivot_force(dct):
     plt.figure()
-    plt.plot(dct['F_tether'][:,0], dct['F_tether'][:,1], label='F_tether_y')
-    plt.xlabel('Force in x')
-    plt.ylabel('Force in y')
+    plt.plot(dct["F_tether"][:, 0], dct["F_tether"][:, 1], label="F_tether_y")
+    plt.xlabel("Force in x")
+    plt.ylabel("Force in y")
     plt.legend(loc=3)
     plt.show()
+
 
 def plot_F_tether_vs_time(dct):
     plt.figure()
-    plt.plot(dct['time'], dct['F_tether'][:,0], label='F_tether_x')
-    plt.plot(dct['time'], dct['F_tether'][:,1], label='F_tether_y')
-    plt.xlabel('time')
-    plt.ylabel('Pivot force')
+    plt.plot(dct["time"], dct["F_tether"][:, 0], label="F_tether_x")
+    plt.plot(dct["time"], dct["F_tether"][:, 1], label="F_tether_y")
+    plt.xlabel("time")
+    plt.ylabel("Pivot force")
     plt.legend(loc=3)
     plt.show()
 
+
 def plot_acc(dct):
     plt.figure()
-    plt.plot(dct['time'], dct[PVEL][:,0], label='x_velocity')
-    plt.plot(dct['time'], dct['acceleration'][:,0], label='x_acceleration')
-    plt.xlabel('time')
-    plt.ylabel('x-acceleration')
+    plt.plot(dct["time"], dct[PVEL][:, 0], label="x_velocity")
+    plt.plot(dct["time"], dct["acceleration"][:, 0], label="x_acceleration")
+    plt.xlabel("time")
+    plt.ylabel("x-acceleration")
     plt.legend(loc=3)
     plt.show()
 
@@ -87,6 +93,6 @@ def execute():
     plot_F_tether_vs_time(dct)
     plot_acc(dct)
 
-if __name__ == '__main__':
-    execute()
 
+if __name__ == "__main__":
+    execute()

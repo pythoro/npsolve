@@ -16,10 +16,10 @@ import npsolve
 
 G = np.array([0, -9.80665])
 
-SPOS = 'slider_pos'
-SVEL = 'slider_vel'
-PPOS = 'pendulum_pos'
-PVEL = 'pendulum_vel'
+SPOS = "slider_pos"
+SVEL = "slider_vel"
+PPOS = "pendulum_pos"
+PVEL = "pendulum_vel"
 
 
 class Slider:
@@ -53,23 +53,18 @@ class Slider:
         return derivatives
 
 
-class Tether():
-    def __init__(self,  k=1e6, c=1e4, length=1.0):
+class Tether:
+    def __init__(self, k=1e6, c=1e4, length=1.0):
         self.k = k
         self.c = c
         self.length = length
-    
-    def get_pendulum_init(self, slider_pos: np.ndarray[float],
-                          mass: float):
+
+    def get_pendulum_init(self, slider_pos: np.ndarray[float], mass: float):
         offset = np.array([0, -self.length])
         stretch = G / self.k
         return slider_pos + offset + stretch
 
-    def F_tether(self,
-                slider_pos,
-                slider_vel,
-                pendulum_pos,
-                pendulum_vel):
+    def F_tether(self, slider_pos, slider_vel, pendulum_pos, pendulum_vel):
         """Work out the force on the pendulum mass"""
         rel_pos = slider_pos - pendulum_pos
         rel_vel = slider_vel - pendulum_vel
@@ -115,15 +110,16 @@ class Assembly:
         self._pendulum = pendulum
         self._tether = tether
 
-    def set_tether_forces(self, state, t, log): 
+    def set_tether_forces(self, state, t, log):
         slider = self._slider
         pendulum = self._pendulum
         slider_pos = slider.pos(state, t)
         slider_vel = slider.vel(state, t)
         pendulum_pos = pendulum.pos(state, t)
         pendulum_vel = pendulum.vel(state, t)
-        F_tether = self._tether.F_tether(slider_pos, slider_vel, pendulum_pos,
-                                      pendulum_vel)
+        F_tether = self._tether.F_tether(
+            slider_pos, slider_vel, pendulum_pos, pendulum_vel
+        )
         slider.set_F_tether(F_tether)
         pendulum.set_F_tether(F_tether)
 
@@ -134,12 +130,13 @@ def get_package():
     tether = Tether()
     assembly = Assembly(slider, pendulum, tether)
     package = npsolve.Package()
-    package.add_component(slider, 'slider', 'get_derivs')
-    package.add_component(pendulum, 'pendulum', 'get_derivs')
-    package.add_component(tether, 'tether', None)
-    package.add_component(assembly, 'assembly', None)
-    package.add_stage_call('assembly', 'set_tether_forces')
+    package.add_component(slider, "slider", "get_derivs")
+    package.add_component(pendulum, "pendulum", "get_derivs")
+    package.add_component(tether, "tether", None)
+    package.add_component(assembly, "assembly", None)
+    package.add_stage_call("assembly", "set_tether_forces")
     return package
+
 
 def solve(package, n=100001, t_end=1.0):
     framerate = (n - 1) / t_end
@@ -147,14 +144,18 @@ def solve(package, n=100001, t_end=1.0):
     dct = ode_integrator.run(package, t_end)
     return dct
 
+
 def get_inits(package):
     slider_pos = np.zeros(2)
-    pend_mass = package['pendulum'].mass
-    inits = {SPOS: slider_pos,
-             SVEL: np.zeros(2),
-             PPOS: package['tether'].get_pendulum_init(slider_pos, pend_mass),
-             PVEL: np.zeros(2)}
+    pend_mass = package["pendulum"].mass
+    inits = {
+        SPOS: slider_pos,
+        SVEL: np.zeros(2),
+        PPOS: package["tether"].get_pendulum_init(slider_pos, pend_mass),
+        PVEL: np.zeros(2),
+    }
     return inits
+
 
 def run(t_end=1.0, n=100001):
     package = get_package()
@@ -162,6 +163,7 @@ def run(t_end=1.0, n=100001):
     package.setup(inits)
     dct = solve(package, n, t_end)
     return dct
+
 
 def plot_xs(dct):
     plt.figure()
@@ -195,11 +197,13 @@ def plot_distance_check(dct):
     plt.ylabel("length")
     plt.show()
 
+
 def execute():
     dct = run(t_end=10.0, n=10001)
     plot_xs(dct)
     plot_trajectories(dct)
     plot_distance_check(dct)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     execute()

@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
+"""The core functionality of npsolve.
+
 Created on Mon Aug  5 14:34:54 2019
 
 @author: Reuben
 
-Npsolve has a simple, small core. It's designed to give
-good flexibility without compromising on performance.
+Npsolve has a simple, small core. It's designed to give good flexibility,
+without compromising on performance.
 
 """
 
@@ -15,31 +15,72 @@ import numpy as np
 
 
 class Slicer:
-    def __init__(self, dct: dict | None = None):
+    """Manage variable arrays and views of those arrays.
+
+    The main function is to take dictionaries of variables and create numpy
+    arrays from them. Then, it creates a dictionary of numpy views
+    of those arrays for each variable.
+
+    The input dictionaries can include floats as well as np.ndarrays of
+    shape (n,) for each variable.
+
+    """
+
+    def __init__(self, dct: dict[str : np.ndarray] | None = None) -> None:
+        """Create a new instance.
+
+        Args:
+            dct (optional, dict | None): A dictionary of string-value pairs
+                to add.
+        """
         self._slices = {}
         self._i = 0
         if dct is not None:
             self.add_dict(dct)
 
     @property
-    def slices(self):
+    def slices(self) -> dict[str:slice]:
+        """Return the slice mapping for a full array."""
         return self._slices.copy()
 
     @property
-    def length(self):
+    def length(self) -> int:
+        """Return the total number of parameters."""
         return self._i
 
-    def add_dict(self, dct: dict):
+    def add_dict(self, dct: dict) -> None:
+        """Add a template dictionary.
+
+        Args:
+            dct (dict): The template dictionary.
+        """
         for key, val in dct.items():
             self.add(key, val)
 
-    def add(self, key: str, val: np.ndarray | float):
+    def add(self, key: str, val: np.ndarray | float) -> None:
+        """Add a key with a template value.
+
+        Args:
+            key (str): The key.
+            val (np.ndarray | float): The template value used to configure
+                the view slices.
+
+        """
         vec = np.atleast_1d(val)
         n = len(vec)
         self._slices[key] = slice(self._i, self._i + n)
         self._i += n
 
-    def get_slice(self, key: str):
+    def get_slice(self, key: str) -> slice:
+        """Return the slice for a given key.
+
+        Args:
+            key (str): The variable key.
+
+        Returns:
+            slice: The slice for the main array corresponding to this
+            variable.
+        """
         return self._slices[key]
 
     def get_view(self, vec: np.ndarray, key: str, writeable: bool):
@@ -77,14 +118,19 @@ class Package:
     def slices(self):
         return self.slicer.slices
 
-    def add_component(self, component: object, name: str, deriv_method_name: str | None) -> None:
+    def add_component(
+        self, component: object, name: str, deriv_method_name: str | None
+    ) -> None:
         self._components[name] = component
         if deriv_method_name is not None:
             try:
                 method = getattr(component, deriv_method_name)
             except AttributeError as e:
-                raise AttributeError("Derivative method not found for component: '" +
-                + deriv_method_name + "'")
+                raise AttributeError(
+                    "Derivative method not found for component: '"
+                    + +deriv_method_name
+                    + "'"
+                )
             self._deriv_methods[name] = method
 
     def set_stage_calls(self, lst: list[str, str]):
@@ -96,13 +142,21 @@ class Package:
         try:
             component = self._components[component_name]
         except KeyError as e:
-            raise KeyError("Component not found in Package: '" + component_name 
-            + "'. Use the add_component method to add it first.") from e
+            raise KeyError(
+                "Component not found in Package: '"
+                + component_name
+                + "'. Use the add_component method to add it first."
+            ) from e
         try:
             method = getattr(component, method_name)
         except AttributeError as e:
-            raise AttributeError("Method not found for component '" + component_name +
-            "': '" + method_name + "'")
+            raise AttributeError(
+                "Method not found for component '"
+                + component_name
+                + "': '"
+                + method_name
+                + "'"
+            )
         self._stage_calls.append((component_name, method))
 
     def setup(self, inits):
@@ -128,7 +182,9 @@ class Package:
         for component_name, method in self._stage_calls:
             method(state, t, log=log, **kwargs)
         for deriv_method in self._deriv_methods.values():
-            for name, val in deriv_method(state, t, log, *args, **kwargs).items():
+            for name, val in deriv_method(
+                state, t, log, *args, **kwargs
+            ).items():
                 ret[name][:] = val  # sets values efficiently in self._ret
         return self._ret_vec
 
@@ -139,7 +195,9 @@ class Package:
         for component_name, method in self._stage_calls:
             method(state, t, log=log, **kwargs)
         for deriv_method in self._deriv_methods.values():
-            for name, val in deriv_method(state, t, log, *args, **kwargs).items():
+            for name, val in deriv_method(
+                state, t, log, *args, **kwargs
+            ).items():
                 ret[name][:] = val  # sets values efficiently in self._ret
         return self._ret_vec
 

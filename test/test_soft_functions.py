@@ -5,7 +5,6 @@ Created on Thu May 21 15:21:59 2020
 @author: Reuben
 """
 
-
 import unittest
 import numpy as np
 
@@ -16,11 +15,11 @@ class Test_lim_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
-       
+
     def test_m1000_side1(self):
         val = soft.lim(self.vals[0], self.limit, side=1, scale=0.001)
         self.assertEqual(val, self.limit)
-        
+
     def test_25_side1(self):
         val = soft.lim(self.vals[1], self.limit, side=1, scale=0.001)
         self.assertEqual(val, self.limit)
@@ -36,7 +35,7 @@ class Test_lim_scalar(unittest.TestCase):
     def test_m1000_sidem1(self):
         val = soft.lim(self.vals[0], self.limit, side=-1, scale=0.001)
         self.assertEqual(val, self.vals[0])
-        
+
     def test_25_sidem1(self):
         val = soft.lim(self.vals[1], self.limit, side=-1, scale=0.001)
         self.assertEqual(val, self.vals[1])
@@ -55,17 +54,17 @@ class Test_lim_numpy(Test_lim_scalar):
         super().setUp()
         self.vals = np.array(self.vals)
         self.limit = 3.0
-        
+
 
 class Test_floor_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
-       
+
     def test_m1000(self):
         val = soft.floor(self.vals[0], self.limit, scale=0.001)
         self.assertEqual(val, self.limit)
-        
+
     def test_25(self):
         val = soft.floor(self.vals[1], self.limit, scale=0.001)
         self.assertEqual(val, self.limit)
@@ -78,22 +77,23 @@ class Test_floor_scalar(unittest.TestCase):
         val = soft.floor(self.vals[3], self.limit, scale=0.001)
         self.assertEqual(val, self.vals[3])
 
+
 class Test_floor_numpy(Test_floor_scalar):
     def setUp(self):
         super().setUp()
         self.vals = np.array(self.vals)
         self.limit = 3.0
-        
+
 
 class Test_ceil_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
-       
+
     def test_m1000(self):
         val = soft.ceil(self.vals[0], self.limit, scale=0.001)
         self.assertEqual(val, self.vals[0])
-        
+
     def test_25(self):
         val = soft.ceil(self.vals[1], self.limit, scale=0.001)
         self.assertEqual(val, self.vals[1])
@@ -112,14 +112,14 @@ class Test_ceil_numpy(Test_ceil_scalar):
         super().setUp()
         self.vals = np.array(self.vals)
         self.limit = 3.0
-        
-        
+
+
 class Test_clip_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, -1.0, 2.5, 3.5, 1000]
         self.lower = 1.5
         self.upper = 3.0
-       
+
     def test_m1000(self):
         val = soft.clip(self.vals[0], self.lower, self.upper, scale=0.001)
         self.assertEqual(val, self.lower)
@@ -151,11 +151,11 @@ class Test_posdiff_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
-       
+
     def test_m1000(self):
         val = soft.posdiff(self.vals[0], self.limit, scale=0.001)
         self.assertEqual(val, 0)
-        
+
     def test_25(self):
         val = soft.posdiff(self.vals[1], self.limit, scale=0.001)
         self.assertEqual(val, 0)
@@ -174,17 +174,17 @@ class Test_posdiff_numpy(Test_posdiff_scalar):
         super().setUp()
         self.vals = np.array(self.vals)
         self.limit = 3.0
-        
+
 
 class Test_negdiff_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
-       
+
     def test_m1000(self):
         val = soft.negdiff(self.vals[0], self.limit, scale=0.001)
         self.assertEqual(val, self.vals[0] - self.limit)
-        
+
     def test_25(self):
         val = soft.negdiff(self.vals[1], self.limit, scale=0.001)
         self.assertEqual(val, self.vals[1] - self.limit)
@@ -203,17 +203,17 @@ class Test_negdiff_numpy(Test_negdiff_scalar):
         super().setUp()
         self.vals = np.array(self.vals)
         self.limit = 3.0
-        
-        
+
+
 class Test_step_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
-       
+
     def test_m1000_side1(self):
         val = soft.step(self.vals[0], self.limit, side=1, scale=0.001)
         self.assertAlmostEqual(val, 0)
-        
+
     def test_25_side1(self):
         val = soft.step(self.vals[1], self.limit, side=1, scale=0.001)
         self.assertAlmostEqual(val, 0)
@@ -225,11 +225,11 @@ class Test_step_scalar(unittest.TestCase):
     def test_1000_side1(self):
         val = soft.step(self.vals[3], self.limit, side=1, scale=0.001)
         self.assertEqual(val, 1)
-        
+
     def test_m1000_sidem1(self):
         val = soft.step(self.vals[0], self.limit, side=-1, scale=0.001)
         self.assertEqual(val, 1)
-        
+
     def test_25_sidem1(self):
         val = soft.step(self.vals[1], self.limit, side=-1, scale=0.001)
         self.assertEqual(val, 1)
@@ -248,17 +248,17 @@ class Test_step_numpy(Test_step_scalar):
         super().setUp()
         self.vals = np.array(self.vals)
         self.limit = 3.0
-        
+
 
 class Test_above_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
-       
+
     def test_m1000(self):
         val = soft.step(self.vals[0], self.limit, scale=0.001)
         self.assertAlmostEqual(val, 0)
-        
+
     def test_25(self):
         val = soft.step(self.vals[1], self.limit, scale=0.001)
         self.assertAlmostEqual(val, 0)
@@ -270,24 +270,24 @@ class Test_above_scalar(unittest.TestCase):
     def test_1000(self):
         val = soft.step(self.vals[3], self.limit, scale=0.001)
         self.assertEqual(val, 1)
-        
+
 
 class Test_above_numpy(Test_above_scalar):
     def setUp(self):
         super().setUp()
         self.vals = np.array(self.vals)
         self.limit = 3.0
-        
-        
+
+
 class Test_below_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 2.5, 3.5, 1000]
         self.limit = 3.0
-       
+
     def test_m1000(self):
         val = soft.below(self.vals[0], self.limit, scale=0.001)
         self.assertEqual(val, 1)
-        
+
     def test_25(self):
         val = soft.below(self.vals[1], self.limit, scale=0.001)
         self.assertEqual(val, 1)
@@ -299,21 +299,21 @@ class Test_below_scalar(unittest.TestCase):
     def test_1000(self):
         val = soft.below(self.vals[3], self.limit, scale=0.001)
         self.assertAlmostEqual(val, 0)
-        
+
 
 class Test_below_numpy(Test_below_scalar):
     def setUp(self):
         super().setUp()
         self.vals = np.array(self.vals)
         self.limit = 3.0
-        
-        
+
+
 class Test_within_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, -1.0, 2.5, 3.5, 1000]
         self.lower = 1.5
         self.upper = 3.0
-       
+
     def test_m1000(self):
         val = soft.within(self.vals[0], self.lower, self.upper, scale=0.001)
         self.assertAlmostEqual(val, 0)
@@ -339,14 +339,14 @@ class Test_within_numpy(Test_within_scalar):
     def setUp(self):
         super().setUp()
         self.vals = np.array(self.vals)
-        
-        
+
+
 class Test_outside_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, -1.0, 2.5, 3.5, 1000]
         self.lower = 1.5
         self.upper = 3.0
-       
+
     def test_m1000(self):
         val = soft.outside(self.vals[0], self.lower, self.upper, scale=0.001)
         self.assertAlmostEqual(val, 1)
@@ -372,13 +372,13 @@ class Test_outside_numpy(Test_outside_scalar):
     def setUp(self):
         super().setUp()
         self.vals = np.array(self.vals)
-        
-        
+
+
 class Test_sign_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, -0.5, 0.5, 1000]
         self.limit = 3.0
-       
+
     def test_m1000(self):
         val = soft.sign(self.vals[0], scale=0.001)
         self.assertAlmostEqual(val, -1)
@@ -400,13 +400,13 @@ class Test_sign_numpy(Test_sign_scalar):
     def setUp(self):
         super().setUp()
         self.vals = np.array(self.vals)
-        
-        
+
+
 class Test_gaussian_scalar(unittest.TestCase):
     def setUp(self):
         self.vals = [-1000, 0.5, 1.5, 2.5, 1000]
         self.center = 1.5
-       
+
     def test_m1000(self):
         val = soft.gaussian(self.vals[0], center=self.center, scale=0.5)
         self.assertAlmostEqual(val, 0)
