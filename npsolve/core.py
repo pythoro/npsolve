@@ -104,6 +104,7 @@ class Slicer:
 class Package:
     def __init__(self):
         self._stage_calls = []
+        self._initialise_calls = []
         self._components = {}
         self._deriv_methods = {}
 
@@ -159,6 +160,36 @@ class Package:
             )
         self._stage_calls.append((component_name, method))
 
+    def set_initialise_calls(self, lst: list[str, str]):
+        self._initialise_calls = []
+        for component_name, method_name in lst:
+            self.add_initialise_call(component_name, method_name)
+
+    def add_initialise_call(self, component_name: str, method_name: str):
+        try:
+            component = self._components[component_name]
+        except KeyError as e:
+            raise KeyError(
+                "Component not found in Package: '"
+                + component_name
+                + "'. Use the add_component method to add it first."
+            ) from e
+        try:
+            method = getattr(component, method_name)
+        except AttributeError as e:
+            raise AttributeError(
+                "Method not found for component '"
+                + component_name
+                + "': '"
+                + method_name
+                + "'"
+            )
+        self._initialise_calls.append((component_name, method))
+
+    def initialise_components(self, state, t, log, *args, **kwargs):
+        for component_name, method in self._initialise_calls:
+            method(state, t, log=log, *args, **kwargs)
+
     def setup(self, inits):
         slicer = Slicer(inits)
         state_vec = slicer.get_state_vec(inits)
@@ -174,13 +205,14 @@ class Package:
         self._ret = ret
         self.keys = keys
         self.slicer = slicer
+        self.initialise_components(state, 0.0, None)
 
     def step(self, vec, t, log=None, *args, **kwargs):
         self._state_vec[:] = vec
         ret = self._ret
         state = self._state
         for component_name, method in self._stage_calls:
-            method(state, t, log=log, **kwargs)
+            method(state, t, log=log, *args, **kwargs)
         for deriv_method in self._deriv_methods.values():
             for name, val in deriv_method(
                 state, t, log, *args, **kwargs
@@ -193,7 +225,7 @@ class Package:
         ret = self._ret
         state = self._state
         for component_name, method in self._stage_calls:
-            method(state, t, log=log, **kwargs)
+            method(state, t, log=log, *args, **kwargs)
         for deriv_method in self._deriv_methods.values():
             for name, val in deriv_method(
                 state, t, log, *args, **kwargs
