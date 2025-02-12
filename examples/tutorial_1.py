@@ -78,29 +78,29 @@ class Assembly:
         comp2.set_comp1_pos(comp1_pos)
 
 
-def get_package():
+def get_system():
     component1 = Component1()
     component2 = Component2()
     assembly = Assembly(component1, component2)
-    package = npsolve.Package()
-    package.add_component(component1, "comp1", "step")
-    package.add_component(component2, "comp2", "step")
-    package.add_component(assembly, "assembly", None)
-    package.set_stage_calls([("assembly", "precalcs")])
-    return package
+    system = npsolve.System()
+    system.add_component(component1, "comp1", "step")
+    system.add_component(component2, "comp2", "step")
+    system.add_component(assembly, "assembly", None)
+    system.set_stage_calls([("assembly", "precalcs")])
+    return system
 
 
-def solve(package, t_end=10):
+def solve(system, t_end=10):
     ode_integrator = npsolve.solvers.ODEIntegrator()
-    dct = ode_integrator.run(package, t_end)
+    dct = ode_integrator.run(system, t_end)
     return dct
 
 
 def run():
-    package = get_package()
+    system = get_system()
     inits = {COMP1_POS: 0.1, COMP1_VEL: 0.3, COMP2_VALUE: -0.1}
-    package.setup(inits)
-    dct = solve(package)
+    system.setup(inits)
+    dct = solve(system)
     return dct
 
 

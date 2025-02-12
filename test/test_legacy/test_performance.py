@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 import timeit
 
-from npsolve.core import Partial, Solver
+from npsolve.legacy.legacy_core import Partial, Solver
 
 
 class Partial_1(Partial):

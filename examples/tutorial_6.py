@@ -36,25 +36,25 @@ class Pendulum2(Pendulum):
         return derivatives
 
 
-def get_package():
+def get_system():
     slider = Slider()
     pendulum = Pendulum2()
     tether = Tether()
     assembly = Assembly(slider, pendulum, tether)
-    package = npsolve.Package()
-    package.add_component(slider, "slider", "get_derivs")
-    package.add_component(pendulum, "pendulum", "get_derivs")
-    package.add_component(tether, "tether", None)
-    package.add_component(assembly, "assembly", None)
-    package.add_stage_call("assembly", "set_tether_forces")
-    return package
+    system = npsolve.System()
+    system.add_component(slider, "slider", "get_derivs")
+    system.add_component(pendulum, "pendulum", "get_derivs")
+    system.add_component(tether, "tether", None)
+    system.add_component(assembly, "assembly", None)
+    system.add_stage_call("assembly", "set_tether_forces")
+    return system
 
 
 def run(t_end=20.0, n=100001):
-    package = get_package()
-    inits = get_inits(package)
-    package.setup(inits)
-    dct = solve(package, n, t_end)
+    system = get_system()
+    inits = get_inits(system)
+    system.setup(inits)
+    dct = solve(system, n, t_end)
     return dct
 
 

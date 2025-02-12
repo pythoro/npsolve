@@ -30,7 +30,7 @@ class Particle2(Particle):
         return velocity
 
 
-def get_package():
+def get_system():
     np.random.seed(0)
     time_points = np.linspace(0, 1, 51)
     positions = np.random.rand(51, 2) * 10
@@ -38,31 +38,31 @@ def get_package():
     pendulum = Pendulum()
     tether = Tether(k=1e7, c=1e4)
     assembly = Assembly(particle, pendulum, tether)
-    package = npsolve.Package()
-    package.add_component(particle, "particle", "step")
-    package.add_component(pendulum, "pendulum", "get_derivs")
-    package.add_component(tether, "tether", None)
-    package.add_component(assembly, "assembly", None)
-    package.add_stage_call("assembly", "set_tether_forces")
-    return package
+    system = npsolve.System()
+    system.add_component(particle, "particle", "step")
+    system.add_component(pendulum, "pendulum", "get_derivs")
+    system.add_component(tether, "tether", None)
+    system.add_component(assembly, "assembly", None)
+    system.add_stage_call("assembly", "set_tether_forces")
+    return system
 
 
-def get_inits(package):
-    slider_pos = package["particle"].get_init_pos()
-    pend_mass = package["pendulum"].mass
+def get_inits(system):
+    slider_pos = system["particle"].get_init_pos()
+    pend_mass = system["pendulum"].mass
     inits = {
         POS: slider_pos,
-        PPOS: package["tether"].get_pendulum_init(slider_pos, pend_mass),
+        PPOS: system["tether"].get_pendulum_init(slider_pos, pend_mass),
         PVEL: np.zeros(2),
     }
     return inits
 
 
 def run(t_end=1.0, n=100001):
-    package = get_package()
-    inits = get_inits(package)
-    package.setup(inits)
-    dct = solve(package, n, t_end)
+    system = get_system()
+    inits = get_inits(system)
+    system.setup(inits)
+    dct = solve(system, n, t_end)
     return dct
 
 

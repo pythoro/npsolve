@@ -101,7 +101,7 @@ class Slicer:
         return state
 
 
-class Package:
+class System:
     def __init__(self):
         self._stage_calls = []
         self._initialise_calls = []
@@ -144,7 +144,7 @@ class Package:
             component = self._components[component_name]
         except KeyError as e:
             raise KeyError(
-                "Component not found in Package: '"
+                "Component not found in System: '"
                 + component_name
                 + "'. Use the add_component method to add it first."
             ) from e
@@ -170,7 +170,7 @@ class Package:
             component = self._components[component_name]
         except KeyError as e:
             raise KeyError(
-                "Component not found in Package: '"
+                "Component not found in System: '"
                 + component_name
                 + "'. Use the add_component method to add it first."
             ) from e

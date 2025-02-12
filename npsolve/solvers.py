@@ -23,18 +23,18 @@ STOP = "stop"
 
 
 class Logger:
-    def __init__(self, package, x_name="time", squeeze=True):
-        self.package = package
+    def __init__(self, system, x_name="time", squeeze=True):
+        self.system = system
         self._x_name = x_name
         self._squeeze = squeeze
         self._log_data = []
 
     def log(self, state_vec, t):
         log = {"stop": False, self._x_name: t}
-        package = self.package
-        slicer = package.slicer
-        package.step(state_vec, t, log)
-        state = slicer.get_state(state_vec, package.keys)
+        system = self.system
+        slicer = system.slicer
+        system.step(state_vec, t, log)
+        state = slicer.get_state(state_vec, system.keys)
         state.update(log)
         self._log_data.append(state)
         return log
@@ -73,11 +73,11 @@ class ODEIntegrator:
         self._interface_cls = interface_cls
         self._integrator_name = integrator_name
 
-    def _setup_integrator(self, package):
+    def _setup_integrator(self, system):
         """Set up the integrator"""
-        integrator = self._interface_cls(package.tstep)
+        integrator = self._interface_cls(system.tstep)
         integrator.set_integrator(self._integrator_name, **self._int_kwargs)
-        integrator.set_initial_value(package.init_vec)
+        integrator.set_initial_value(system.init_vec)
         return integrator
 
     def _make_x_vector(self, end):
@@ -94,7 +94,7 @@ class ODEIntegrator:
         n = int(x_end * self.framerate)
         return np.linspace(0, x_end, n)
 
-    def run(self, package, end, x_name="time", squeeze=True, **kwargs):
+    def run(self, system, end, x_name="time", squeeze=True, **kwargs):
         """Run the solver
 
         Args:
@@ -107,11 +107,11 @@ class ODEIntegrator:
             through time.
         """
         x_vec = self._make_x_vector(end)
-        integrator = self._setup_integrator(package)
+        integrator = self._setup_integrator(system)
         dt = x_vec[1] - x_vec[0]
         t = 0.0
-        logger = Logger(package, x_name=x_name, squeeze=squeeze)
-        logger.log(package.init_vec, 0)
+        logger = Logger(system, x_name=x_name, squeeze=squeeze)
+        logger.log(system.init_vec, 0)
         stop = False
         while integrator.successful() and t < end and not stop:
             t = t + dt

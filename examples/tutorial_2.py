@@ -54,28 +54,28 @@ class Ball:
         return derivatives
 
 
-def get_package():
+def get_system():
     ball = Ball()
-    package = npsolve.Package()
-    package.add_component(ball, "ball", "step")
-    return package
+    system = npsolve.System()
+    system.add_component(ball, "ball", "step")
+    return system
 
 
-def solve(package, t_end=3.0):
+def solve(system, t_end=3.0):
     framerate = 100001 / 3.0
     ode_integrator = npsolve.solvers.ODEIntegrator(framerate=framerate)
-    dct = ode_integrator.run(package, t_end)
+    dct = ode_integrator.run(system, t_end)
     return dct
 
 
 def run(t_end=3.0, n=100001):
-    package = get_package()
+    system = get_system()
     inits = {
         POS: np.array([0.0, Y_LEDGE]),
         VEL: np.array([5.0, 0.0]),
     }
-    package.setup(inits)
-    dct = solve(package)
+    system.setup(inits)
+    dct = solve(system)
     return dct
 
 

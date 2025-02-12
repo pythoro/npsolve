@@ -10,6 +10,6 @@ from .legacy.legacy_cache import multi_cached, mono_cached
 from .legacy.legacy_solver import Integrator
 from .legacy.legacy_utils import *
 
-from .core import Package
+from .core import System
 from . import soft_functions
 from . import solvers

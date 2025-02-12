@@ -124,44 +124,44 @@ class Assembly:
         pendulum.set_F_tether(F_tether)
 
 
-def get_package():
+def get_system():
     slider = Slider()
     pendulum = Pendulum()
     tether = Tether()
     assembly = Assembly(slider, pendulum, tether)
-    package = npsolve.Package()
-    package.add_component(slider, "slider", "get_derivs")
-    package.add_component(pendulum, "pendulum", "get_derivs")
-    package.add_component(tether, "tether", None)
-    package.add_component(assembly, "assembly", None)
-    package.add_stage_call("assembly", "set_tether_forces")
-    return package
+    system = npsolve.System()
+    system.add_component(slider, "slider", "get_derivs")
+    system.add_component(pendulum, "pendulum", "get_derivs")
+    system.add_component(tether, "tether", None)
+    system.add_component(assembly, "assembly", None)
+    system.add_stage_call("assembly", "set_tether_forces")
+    return system
 
 
-def solve(package, n=100001, t_end=1.0):
+def solve(system, n=100001, t_end=1.0):
     framerate = (n - 1) / t_end
     ode_integrator = npsolve.solvers.ODEIntegrator(framerate=framerate)
-    dct = ode_integrator.run(package, t_end)
+    dct = ode_integrator.run(system, t_end)
     return dct
 
 
-def get_inits(package):
+def get_inits(system):
     slider_pos = np.zeros(2)
-    pend_mass = package["pendulum"].mass
+    pend_mass = system["pendulum"].mass
     inits = {
         SPOS: slider_pos,
         SVEL: np.zeros(2),
-        PPOS: package["tether"].get_pendulum_init(slider_pos, pend_mass),
+        PPOS: system["tether"].get_pendulum_init(slider_pos, pend_mass),
         PVEL: np.zeros(2),
     }
     return inits
 
 
 def run(t_end=1.0, n=100001):
-    package = get_package()
-    inits = get_inits(package)
-    package.setup(inits)
-    dct = solve(package, n, t_end)
+    system = get_system()
+    inits = get_inits(system)
+    system.setup(inits)
+    dct = solve(system, n, t_end)
     return dct
 
 

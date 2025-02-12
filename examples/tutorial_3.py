@@ -37,17 +37,17 @@ class Particle:
         return derivatives
 
 
-def get_package(time_points, positions):
+def get_system(time_points, positions):
     particle = Particle(time_points, positions)
-    package = npsolve.Package()
-    package.add_component(particle, "particle", "step")
-    return package
+    system = npsolve.System()
+    system.add_component(particle, "particle", "step")
+    return system
 
 
-def solve(package, n=100001, t_end=1.0):
+def solve(system, n=100001, t_end=1.0):
     framerate = (n - 1) / t_end
     ode_integrator = npsolve.solvers.ODEIntegrator(framerate=framerate)
-    dct = ode_integrator.run(package, t_end)
+    dct = ode_integrator.run(system, t_end)
     return dct
 
 
@@ -55,11 +55,11 @@ def run(t_end=1.0, n=100001):
     np.random.seed(0)
     time_points = np.linspace(0, 1, 51)
     positions = np.random.rand(51, 2) * 10
-    package = get_package(time_points, positions)
-    particle: Particle = package["particle"]
+    system = get_system(time_points, positions)
+    particle: Particle = system["particle"]
     inits = {POS: particle.get_init_pos()}
-    package.setup(inits)
-    dct = solve(package, n, t_end)
+    system.setup(inits)
+    dct = solve(system, n, t_end)
     return particle, dct
 
 
