@@ -59,8 +59,11 @@ class Tether():
         self.c = c
         self.length = length
     
-    def get_pendulum_init(self, slider_pos: np.ndarray[float]):
-        return slider_pos + np.array([0, -self.length])
+    def get_pendulum_init(self, slider_pos: np.ndarray[float],
+                          mass: float):
+        offset = np.array([0, -self.length])
+        stretch = G / self.k
+        return slider_pos + offset + stretch
 
     def F_tether(self,
                 slider_pos,
@@ -146,9 +149,10 @@ def solve(package, n=100001, t_end=1.0):
 
 def get_inits(package):
     slider_pos = np.zeros(2)
+    pend_mass = package['pendulum'].mass
     inits = {SPOS: slider_pos,
              SVEL: np.zeros(2),
-             PPOS: package['tether'].get_pendulum_init(slider_pos),
+             PPOS: package['tether'].get_pendulum_init(slider_pos, pend_mass),
              PVEL: np.zeros(2)}
     return inits
 

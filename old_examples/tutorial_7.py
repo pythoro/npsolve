@@ -7,7 +7,7 @@ Created on Mon Oct 30 12:20:43 2023
 A one-module demo showing the use of dependency injection to communicate
 between classes.
 
-This is now the preferred way to communicate between Partial objects.
+This used to be the preferred way to communicate between Partial objects.
 
 """
 import npsolve

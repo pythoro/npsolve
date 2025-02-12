@@ -1,9 +1,12 @@
 
-from tutorial_1 import get_package
+"""Illustrates using scipy odeint solver instead of npsolve ODEIntegrator."""
+
+from examples.tutorial_1 import get_package
 
 
 import numpy as np
 import npsolve
+from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
 # Unique variable names
@@ -15,9 +18,9 @@ COMP2_FORCE = 'comp2_force'
 
 
 def solve(package, t_end=10):
-    ode_integrator = npsolve.solvers.ODEIntegrator()
-    dct = ode_integrator.run(package, t_end)
-    return dct
+    t_vec = np.linspace(0, t_end, 1001)
+    result = odeint(package.step, package.init_vec, t_vec)
+    return t_vec, result
 
 
 def run():

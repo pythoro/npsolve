@@ -1,16 +1,13 @@
-# -*- coding: utf-8 -*-
-"""
+"""Example of all the main functionality of npsolve.
+
 Created on Mon Sep  2 16:48:33 2019
 
 @author: Reuben
-
-This example for Tutorial 1 introduces the basics of npsolve.
 
 """
 
 import numpy as np
 import npsolve
-from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
 # Unique variable names
@@ -66,11 +63,13 @@ class Assembly:
         self.comp2 = comp2
 
     def precalcs(self, state, t, log):
+        """Inject dependencies for later calculations in 'step' methods."""
         comp1 = self.comp1
         comp2 = self.comp2
         comp1_pos = comp1.get_pos(state)
         comp2_force = comp2.get_force(state)
         if log:
+            # Log whatever we want here into a dictionary.
             log[COMP2_FORCE] = comp2_force
         comp1.set_comp2_force(comp2_force)
         comp2.set_comp1_pos(comp1_pos)
@@ -91,9 +90,9 @@ def get_package():
 
 
 def solve(package, t_end=10):
-    t_vec = np.linspace(0, t_end, 1001)
-    result = odeint(package.step, package.init_vec, t_vec)
-    return t_vec, result
+    ode_integrator = npsolve.solvers.ODEIntegrator()
+    dct = ode_integrator.run(package, t_end)
+    return dct
 
 
 def run():

@@ -50,8 +50,9 @@ def get_package():
 
 def get_inits(package):
     slider_pos = package['particle'].get_init_pos()
+    pend_mass = package['pendulum'].mass
     inits = {POS: slider_pos,
-             PPOS: package['tether'].get_pendulum_init(slider_pos),
+             PPOS: package['tether'].get_pendulum_init(slider_pos, pend_mass),
              PVEL: np.zeros(2)}
     return inits
 
