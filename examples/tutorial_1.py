@@ -101,22 +101,25 @@ def run():
              COMP1_VEL: 0.3,
              COMP2_VALUE: -0.1}
     package.setup(inits)
-    t_vec, result = solve(package)
-    return package, t_vec, result
+    dct = solve(package)
+    return dct
 
 
-def plot(package, t_vec, result):
-    slices = package.slices
+def plot(dct):
     plt.figure(1)
-    for slice_name, slice in slices.items():
-        plt.plot(t_vec, result[:, slice], label=slice_name)
+    dct2 = dct.copy()
+    t_vec = dct2.pop('time')
+    for var_name, values in dct2.items():
+        plt.plot(t_vec, values, label=var_name)
     plt.legend()
     plt.show()
 
 
 def execute():
-    package, t_vec, result = run()
-    plot(package, t_vec, result)
+    dct = run()
+    plot(dct)
+
 
 if __name__ == '__main__':
     execute()
+
