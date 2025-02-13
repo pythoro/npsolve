@@ -170,21 +170,11 @@ we've named 'assembly'.
 Note also that we've set the final derivative call for the assembly 
 component to None, so it won't be called at the end of the current timestep.
 
-To perform the integration, we'll use the inbuilt ODEIntegrator class.
-
-```python
-
-def solve(system, t_end=10):
-    ode_integrator = npsolve.solvers.ODEIntegrator()
-    dct = ode_integrator.run(system, t_end)
-    return dct
-
-```
-
 Now, we are ready to run. To run, we need to create a dictionary that 
 contains initial values for all our state variables. Any missing ones
 will not be found by any components that depend on them. Then we setup
 the system by passing the initial values dictionary to its `setup` method.
+To perform the integration, we'll use the inbuilt `integrate` function.
 
 ```python
 
@@ -194,10 +184,14 @@ def run():
              COMP1_VEL: 0.3,
              COMP2_VALUE: -0.1}
     system.setup(inits)
-    dct = solve(system)
+    dct = npsolve.integrate(system, t_end=10.0, framerate=60.0)
     return dct
 
 ```
+
+Here, we'll use a framerate of 60, which means we'll output results at
+60 Hz. Note that this inbuilt integrator uses an `ode` instance from scipy, 
+which uses a variable time step.
 
 Lastly, we'll add functions to plot results and execute the script.
 
@@ -283,3 +277,22 @@ Again for performance reasons, the full state dict is passed to all
 components. This means that a component could access state information
 supplied by other components. While this is possible, it's usually a sign
 that the code should be refactored to better encapsulate each component.
+
+### Customising the integrator
+
+The `integrate` method is equivalent to this code:
+
+```python
+
+def integrate(system, t_end, framerate):
+    ode_integrator = ODEIntegrator(framerate=framerate)
+    dct = ode_integrator.run(system, t_end)
+    return dct
+
+```
+
+You can pass extra arguments to ODEIntegrator to use other capabilities 
+of scipy's ode integrator.
+
+You can also use your own integrator. Check out the code for 
+the `ODEIntegrator` class as a template.

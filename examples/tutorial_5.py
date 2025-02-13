@@ -13,7 +13,7 @@ import npsolve
 import numpy as np
 import matplotlib.pyplot as plt
 from tutorial_3 import Particle, POS
-from tutorial_4 import Pendulum, solve, Tether, Assembly, PPOS, PVEL
+from tutorial_4 import Pendulum, Tether, Assembly, PPOS, PVEL
 
 
 class Particle2(Particle):
@@ -62,7 +62,7 @@ def run(t_end=1.0, n=100001):
     system = get_system()
     inits = get_inits(system)
     system.setup(inits)
-    dct = solve(system, n, t_end)
+    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1)/t_end)
     return dct
 
 

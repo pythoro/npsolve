@@ -121,3 +121,9 @@ class ODEIntegrator:
                 stop = True
         data_dct = logger.get_data_dct()
         return data_dct
+
+
+def integrate(system, t_end, framerate):
+    ode_integrator = ODEIntegrator(framerate=framerate)
+    dct = ode_integrator.run(system, t_end)
+    return dct

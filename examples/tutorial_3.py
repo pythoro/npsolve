@@ -44,13 +44,6 @@ def get_system(time_points, positions):
     return system
 
 
-def solve(system, n=100001, t_end=1.0):
-    framerate = (n - 1) / t_end
-    ode_integrator = npsolve.solvers.ODEIntegrator(framerate=framerate)
-    dct = ode_integrator.run(system, t_end)
-    return dct
-
-
 def run(t_end=1.0, n=100001):
     np.random.seed(0)
     time_points = np.linspace(0, 1, 51)
@@ -59,7 +52,7 @@ def run(t_end=1.0, n=100001):
     particle: Particle = system["particle"]
     inits = {POS: particle.get_init_pos()}
     system.setup(inits)
-    dct = solve(system, n, t_end)
+    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1)/t_end)
     return particle, dct
 
 

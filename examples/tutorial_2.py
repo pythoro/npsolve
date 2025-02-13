@@ -61,13 +61,6 @@ def get_system():
     return system
 
 
-def solve(system, t_end=3.0):
-    framerate = 100001 / 3.0
-    ode_integrator = npsolve.solvers.ODEIntegrator(framerate=framerate)
-    dct = ode_integrator.run(system, t_end)
-    return dct
-
-
 def run(t_end=3.0, n=100001):
     system = get_system()
     inits = {
@@ -75,7 +68,7 @@ def run(t_end=3.0, n=100001):
         VEL: np.array([5.0, 0.0]),
     }
     system.setup(inits)
-    dct = solve(system)
+    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1)/t_end)
     return dct
 
 

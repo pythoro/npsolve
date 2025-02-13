@@ -12,12 +12,10 @@ which includes a stop flag to stop the ODEIntegrator early.
 import matplotlib.pyplot as plt
 import npsolve
 from tutorial_4 import Slider, Pendulum, Tether, Assembly, PPOS, PVEL
-from tutorial_4 import get_inits, solve
+from tutorial_4 import get_inits
 
 from npsolve.solvers import STOP
 
-status = npsolve.get_status("demos_status")
-logger = npsolve.get_logger("demos_logger")
 
 
 class Pendulum2(Pendulum):
@@ -54,7 +52,7 @@ def run(t_end=20.0, n=100001):
     system = get_system()
     inits = get_inits(system)
     system.setup(inits)
-    dct = solve(system, n, t_end)
+    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1)/t_end)
     return dct
 
 

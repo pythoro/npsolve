@@ -90,17 +90,11 @@ def get_system():
     return system
 
 
-def solve(system, t_end=10):
-    ode_integrator = npsolve.solvers.ODEIntegrator()
-    dct = ode_integrator.run(system, t_end)
-    return dct
-
-
 def run():
     system = get_system()
     inits = {COMP1_POS: 0.1, COMP1_VEL: 0.3, COMP2_VALUE: -0.1}
     system.setup(inits)
-    dct = solve(system)
+    dct = npsolve.integrate(system, t_end=10.0, framerate=60.0)
     return dct
 
 
