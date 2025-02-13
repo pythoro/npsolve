@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 from tutorial_1 import Solver, plot
 
+
 class Component1(npsolve.Partial):
     def __init__(self):
         super().__init__()  # Don't forget to call this!
@@ -23,11 +24,11 @@ class Component1(npsolve.Partial):
 
     def get_position(self):
         """Returns a value
-        
+
         In this example, it is just a state variable, but it could be much
         more complex.
         """
-        return self.state['position1']
+        return self.state["position1"]
 
     def connect(self, component2):
         """Connect with a Component2 instance"""
@@ -53,11 +54,11 @@ class Component2(npsolve.Partial):
 
     def get_value(self):
         """Returns a value
-        
+
         In this example, it is just a state variable, but it could be much
         more complex.
         """
-        return self.state['component2_value']
+        return self.state["component2_value"]
 
     def connect(self, component1):
         """Connect with a Component1 instance"""
@@ -93,5 +94,6 @@ def execute():
     res, solver = run()
     plot(res, solver)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     execute()

@@ -32,7 +32,24 @@ sphinx = "^7.2.6"
 sphinx-rtd-theme = "^2.0.0"
 bump2version = "^1.0.1"
 matplotlib = "3.9.2"
+ruff = "^0.9.6"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# Needed for discovery
+line-length = 79
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "C90", "I", "UP", "SIM", "D", "ANN"]
+ignore = ["ANN101", "ANN102"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "E402"]
+# Selectively ignore annotation and documentation on older modules.
+"*npsolve/legacy/*" = ["ANN", "D"]

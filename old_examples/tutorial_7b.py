@@ -10,6 +10,7 @@ Fastwire is powerful but the connections are not made explicitly, so they can
 be confusing. It can also be more challenging to unittest.
 
 """
+
 import npsolve
 from scipy.integrate import odeint
 import fastwire as fw

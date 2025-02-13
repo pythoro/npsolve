@@ -11,7 +11,7 @@ it difficult to use an object oriented approach to performing the calculations.
 Usually, we end up with script-like code that looses many of the benefits
 of object-oriented programming.
 
-The npsolve framework sets up an intermediate object, a Package, that 
+The npsolve framework sets up an intermediate object, a system, that 
 translates between unnamed vectors and object-oriented classes. It facilitates
 both simple and complex inter-dependencies and keeps code modular and 
 maintainable.
@@ -97,8 +97,8 @@ Note that external dependencies will be injected via the `set_comp1_pos` and
 certain parameters in the `get_pos` and `get_force` methods.
 
 They each have a method we've called 'step', which will be called by the
-Package. Whatever their name, these methods must accept three (or more) 
-parameters, `state`, `t`, and `log`. These are passed in by the Package
+system. Whatever their name, these methods must accept three (or more) 
+parameters, `state`, `t`, and `log`. These are passed in by the system
 at each time step.
 
 - state (dict): A dictionary that contains the current values for all state
@@ -135,29 +135,29 @@ We're simply making a class that accepts instances of our two components,
 and then provides a method that injects their inter-dependencies, which
 we've called `precalcs` in this case. This method must accept three (or more) 
 parameters, `state`, `t`, and `log` because it will be called by the
-Package. 
+system. 
 
-Now, we need to make a function to create a Package instance.
+Now, we need to make a function to create a system instance.
 
 ```python
     
-def get_package():
+def get_system():
     component1 = Component1()
     component2 = Component2()
     assembly = Assembly(component1, component2)
-    package = npsolve.Package()
-    package.add_component(component1, 'comp1', 'step')
-    package.add_component(component2, 'comp2', 'step')
-    package.add_component(assembly, 'assembly', None)
-    package.set_stage_calls(
+    system = npsolve.system()
+    system.add_component(component1, 'comp1', 'step')
+    system.add_component(component2, 'comp2', 'step')
+    system.add_component(assembly, 'assembly', None)
+    system.set_stage_calls(
         [('assembly', 'precalcs')]
     )
-    return package
+    return system
 
 ```
 
 Here, we're creating instances of our components and our assembly.
-Then, we're adding them to a new Package instance. When we use
+Then, we're adding them to a new system instance. When we use
 `add_component`, we pass in the instance object, a unique name, and the
 method to call to finish each time step and get state derivatives. If the
 derivatives method is set to None, the derivatives will default to 0.0.
@@ -170,34 +170,28 @@ we've named 'assembly'.
 Note also that we've set the final derivative call for the assembly 
 component to None, so it won't be called at the end of the current timestep.
 
-To perform the integration, we'll use the inbuilt ODEIntegrator class.
-
-```python
-
-def solve(package, t_end=10):
-    ode_integrator = npsolve.solvers.ODEIntegrator()
-    dct = ode_integrator.run(package, t_end)
-    return dct
-
-```
-
 Now, we are ready to run. To run, we need to create a dictionary that 
 contains initial values for all our state variables. Any missing ones
 will not be found by any components that depend on them. Then we setup
-the Package by passing the initial values dictionary to its `setup` method.
+the system by passing the initial values dictionary to its `setup` method.
+To perform the integration, we'll use the inbuilt `integrate` function.
 
 ```python
 
 def run():
-    package = get_package()
+    system = get_system()
     inits = {COMP1_POS: 0.1,
              COMP1_VEL: 0.3,
              COMP2_VALUE: -0.1}
-    package.setup(inits)
-    dct = solve(package)
+    system.setup(inits)
+    dct = npsolve.integrate(system, t_end=10.0, framerate=60.0)
     return dct
 
 ```
+
+Here, we'll use a framerate of 60, which means we'll output results at
+60 Hz. Note that this inbuilt integrator uses an `ode` instance from scipy, 
+which uses a variable time step.
 
 Lastly, we'll add functions to plot results and execute the script.
 
@@ -236,7 +230,7 @@ There are a few things to know when using npsolve.
 ### Never mutate the state
 
 Each value in the state dictionary is a read-only view of a single numpy
-array. These views are setup in the `Package.setup` method prior to 
+array. These views are setup in the `system.setup` method prior to 
 integration.
 
 For performance, the state dict is a normal dict, which can be mutated.
@@ -283,3 +277,22 @@ Again for performance reasons, the full state dict is passed to all
 components. This means that a component could access state information
 supplied by other components. While this is possible, it's usually a sign
 that the code should be refactored to better encapsulate each component.
+
+### Customising the integrator
+
+The `integrate` method is equivalent to this code:
+
+```python
+
+def integrate(system, t_end, framerate):
+    ode_integrator = ODEIntegrator(framerate=framerate)
+    dct = ode_integrator.run(system, t_end)
+    return dct
+
+```
+
+You can pass extra arguments to ODEIntegrator to use other capabilities 
+of scipy's ode integrator.
+
+You can also use your own integrator. Check out the code for 
+the `ODEIntegrator` class as a template.
