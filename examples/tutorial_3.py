@@ -52,7 +52,7 @@ def run(t_end=1.0, n=100001):
     particle: Particle = system["particle"]
     inits = {POS: particle.get_init_pos()}
     system.setup(inits)
-    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1)/t_end)
+    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1) / t_end)
     return particle, dct
 
 

@@ -70,7 +70,7 @@ class Test_Slicer:
         }
         keys = ["test_key_1", "test_key_2"]
         state_vec = slicer.get_state_vec(dct)
-        state = slicer.get_state(state_vec, keys)
+        state = slicer.get_state(state_vec)
         for key, val in state.items():
             assert val == approx(dct[key])
         assert state["test_key_1"].base is state_vec
@@ -86,7 +86,7 @@ class Test_Slicer:
         }
         keys = ["test_key_1", "test_key_2"]
         state_vec = slicer.get_state_vec(dct)
-        state = slicer.get_state(state_vec, keys, writeable=True)
+        state = slicer.get_state(state_vec, writeable=True)
         for key, val in state.items():
             assert val == approx(dct[key])
         assert state["test_key_1"].base is state_vec

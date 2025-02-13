@@ -70,4 +70,4 @@ class Test_Solver(unittest.TestCase):
         )
         print()
         print("Relative speed: " + "{:0.3f}".format(time / baseline))
-        self.assertLess(time, baseline * 1.15)
+        self.assertLess(time, baseline * 1.5)

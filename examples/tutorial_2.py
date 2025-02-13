@@ -68,7 +68,7 @@ def run(t_end=3.0, n=100001):
         VEL: np.array([5.0, 0.0]),
     }
     system.setup(inits)
-    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1)/t_end)
+    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1) / t_end)
     return dct
 
 

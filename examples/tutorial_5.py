@@ -62,7 +62,7 @@ def run(t_end=1.0, n=100001):
     system = get_system()
     inits = get_inits(system)
     system.setup(inits)
-    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1)/t_end)
+    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1) / t_end)
     return dct
 
 

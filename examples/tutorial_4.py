@@ -137,6 +137,7 @@ def get_system():
     system.add_stage_call("assembly", "set_tether_forces")
     return system
 
+
 def get_inits(system):
     slider_pos = np.zeros(2)
     pend_mass = system["pendulum"].mass
@@ -153,7 +154,7 @@ def run(t_end=1.0, n=100001):
     system = get_system()
     inits = get_inits(system)
     system.setup(inits)
-    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1)/t_end)
+    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1) / t_end)
     return dct
 
 

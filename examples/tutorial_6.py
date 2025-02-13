@@ -17,7 +17,6 @@ from tutorial_4 import get_inits
 from npsolve.solvers import STOP
 
 
-
 class Pendulum2(Pendulum):
     def get_derivs(self, state, t, log):
         """Called by the solver at each time step
@@ -52,7 +51,7 @@ def run(t_end=20.0, n=100001):
     system = get_system()
     inits = get_inits(system)
     system.setup(inits)
-    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1)/t_end)
+    dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1) / t_end)
     return dct
 
 

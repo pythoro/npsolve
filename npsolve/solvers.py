@@ -18,7 +18,6 @@ except ModuleNotFoundError:
     scipy_found = False
 
 
-FINAL = "final"
 STOP = "stop"
 
 
