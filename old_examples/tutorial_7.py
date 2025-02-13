@@ -10,6 +10,7 @@ between classes.
 This used to be the preferred way to communicate between Partial objects.
 
 """
+
 import npsolve
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt

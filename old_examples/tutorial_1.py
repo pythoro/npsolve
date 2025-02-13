@@ -85,5 +85,6 @@ def execute():
     res, solver = run()
     plot(res, solver)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     execute()

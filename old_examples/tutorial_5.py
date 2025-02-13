@@ -4,7 +4,7 @@ Created on Sun May 24 07:23:55 2020
 
 @author: Reuben
 
-This example for Tutorial 4 illustrates how to set initial conditions. It 
+This example for Tutorial 4 illustrates how to set initial conditions. It
 attaches the pendulum to a particle that travels through a trajectory.
 
 """
@@ -16,16 +16,16 @@ from tutorial_4 import Pendulum, Solver
 
 
 class Particle2(Particle):
-        
     def pivot(self, t):
         velocity = np.array([self.xts(t, der=1), self.yts(t, der=1)])
-        return self.state['position'], velocity
+        return self.state["position"], velocity
 
 
 def set_init_condition(particle, pendulum):
-    init_particle_pos = particle.npsolve_vars['position']['init']
+    init_particle_pos = particle.npsolve_vars["position"]["init"]
     init_pendulum_pos = init_particle_pos - np.array([0.0, 1.0])
-    pendulum.set_init('p_pos', init_pendulum_pos)
+    pendulum.set_init("p_pos", init_pendulum_pos)
+
 
 def run(k=1e7, c=1e4, t_end=1.0, n=100001):
     particle = Particle2()
@@ -40,26 +40,31 @@ def run(k=1e7, c=1e4, t_end=1.0, n=100001):
 
 def plot_trajectories(dct):
     plt.figure()
-    plt.plot(dct['position'][:,0], dct['position'][:,1], linewidth=1.0,
-             label='particle')
-    plt.plot(dct['p_pos'][:,0], dct['p_pos'][:,1],  linewidth=1.0,
-             label='pendulum')
-    plt.xlabel('x')
-    plt.ylabel('y')
+    plt.plot(
+        dct["position"][:, 0],
+        dct["position"][:, 1],
+        linewidth=1.0,
+        label="particle",
+    )
+    plt.plot(
+        dct["p_pos"][:, 0], dct["p_pos"][:, 1], linewidth=1.0, label="pendulum"
+    )
+    plt.xlabel("x")
+    plt.ylabel("y")
     plt.xlim(-2.5, 12.5)
     plt.ylim(-2.5, 12.5)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.legend(loc=2)
     plt.show()
 
 
 def plot_distance_check(dct):
     plt.figure()
-    diff = dct['p_pos'] - dct['position']
+    diff = dct["p_pos"] - dct["position"]
     dist = np.linalg.norm(diff, axis=1)
-    plt.plot(dct['time'], dist)
-    plt.xlabel('time')
-    plt.ylabel('length')
+    plt.plot(dct["time"], dist)
+    plt.xlabel("time")
+    plt.ylabel("length")
     plt.show()
 
 
@@ -68,5 +73,6 @@ def execute():
     plot_trajectories(dct)
     plot_distance_check(dct)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     execute()
