@@ -124,8 +124,8 @@ class Assembly:
         pendulum.set_F_tether(F_tether)
 
 
-def get_system():
-    slider = Slider()
+def get_system(freq=1.0):
+    slider = Slider(freq=freq)
     pendulum = Pendulum()
     tether = Tether()
     assembly = Assembly(slider, pendulum, tether)
@@ -150,8 +150,8 @@ def get_inits(system):
     return inits
 
 
-def run(t_end=1.0, n=100001):
-    system = get_system()
+def run(freq=1.0, t_end=1.0, n=100001):
+    system = get_system(freq=freq)
     inits = get_inits(system)
     system.setup(inits)
     dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1) / t_end)
@@ -192,7 +192,8 @@ def plot_distance_check(dct):
 
 
 def execute():
-    dct = run(t_end=10.0, n=10001)
+    # Also try freq=0.7, t_end=60.0, where it bifurcates into chaotic motion. 
+    dct = run(freq=1.0, t_end=60.0, n=10001)
     plot_xs(dct)
     plot_trajectories(dct)
     plot_distance_check(dct)
