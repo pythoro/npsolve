@@ -1,9 +1,10 @@
-npsolve.solvers module
+npsolve.legacy.legacy_solver module
 ===================================
 
-.. automodule:: npsolve.solvers
+.. automodule:: npsolve.legacy.legacy_solver
    :members:
    :undoc-members:
    :show-inheritance:
+
 
 

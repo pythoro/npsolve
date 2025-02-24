@@ -13,4 +13,4 @@ from .legacy.legacy_utils import *
 from .core import System
 from . import soft_functions
 from . import solvers
-from .solvers import integrate
+from .solvers import integrate, ODEIntegrator, STOP
