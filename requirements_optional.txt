@@ -1,1 +1,2 @@
 scipy>=1.9.1
+sphinx_rtd_theme>=3.0.0
