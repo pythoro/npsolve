@@ -19,4 +19,5 @@ build:
 python:
    install:
      - requirements: requirements.txt
+     - requirements: requirements_optional.txt
 
