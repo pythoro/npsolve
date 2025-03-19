@@ -39,11 +39,11 @@ class Slider:
         return state[SVEL]
 
     def F_sinusoid(self, t):
-        """The force to make the system do something"""
+        """The force to make the system do something."""
         return 10 * np.cos(2 * np.pi * (self.freq * t))
 
     def get_derivs(self, state, t, log):
-        """Called by the solver at each time step"""
+        """Called by the solver at each time step."""
         F_tether = -self._F_tether
         F_tether_x = F_tether[0]
         F_sinusoid_x = self.F_sinusoid(t)
@@ -59,9 +59,11 @@ class Tether:
         self.c = c
         self.length = length
 
-    def get_pendulum_init(self, slider_pos: np.ndarray[float], mass: float):
+    def get_pendulum_init(
+        self, slider_pos: np.ndarray[float], force: np.ndarray
+    ):
         offset = np.array([0, -self.length])
-        stretch = G / self.k
+        stretch = force / self.k
         return slider_pos + offset + stretch
 
     def F_tether(self, slider_pos, slider_vel, pendulum_pos, pendulum_vel):
@@ -76,7 +78,7 @@ class Tether:
         return F_spring + F_damping
 
 
-class Pendulum(npsolve.Partial):
+class Pendulum():
     def __init__(self, mass=1.0):
         self.mass = mass
 
@@ -141,10 +143,11 @@ def get_system(freq=1.0):
 def get_inits(system):
     slider_pos = np.zeros(2)
     pend_mass = system["pendulum"].mass
+    force = pend_mass * G
     inits = {
         SPOS: slider_pos,
         SVEL: np.zeros(2),
-        PPOS: system["tether"].get_pendulum_init(slider_pos, pend_mass),
+        PPOS: system["tether"].get_pendulum_init(slider_pos, force),
         PVEL: np.zeros(2),
     }
     return inits
@@ -191,9 +194,9 @@ def plot_distance_check(dct):
     plt.show()
 
 
-def execute():
-    # Also try freq=0.7, t_end=60.0, where it bifurcates into chaotic motion. 
-    dct = run(freq=1.0, t_end=60.0, n=10001)
+def execute(freq=1.0, t_end=10.0):
+    # Also try freq=0.7, t_end=60.0, where it bifurcates into chaotic motion.
+    dct = run(freq=freq, t_end=t_end, n=10001)
     plot_xs(dct)
     plot_trajectories(dct)
     plot_distance_check(dct)

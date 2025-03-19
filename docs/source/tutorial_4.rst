@@ -1,16 +1,11 @@
-Tutorial 4 - Sharing values between objects
+Tutorial 4 - More complex interdependencies
 ===========================================
 
-In more complex models, values often need to be shared between different
-Partial instances. Sometimes, those values are *state* variables that are
-declared with the `add_var` method. In that case, any Partial connected to
-the Solver will get access to them through their *state* dictionary
-(i.e. `self.state[<variable name>]`). But some shared values are not state
-variables. How do we handle that?
+In more complex models, values often need to be shared between multiple
+components. The approach is exactly the same as in Tutorial 1, we just have
+more components and a few more calls to make. 
 
-We use the *fastwire* package. It provides a convenient, event-like way to
-share variables. This tutorial will give an example. We're going to
-simulate the dynamics of a frictionless slider moving in the x axis 
+To illustrate here, we'll simulate the dynamics of a frictionless slider moving in the x axis 
 with a pendulum attached that is free to move in the x and y axes. We'll add
 a sinusoidal force to the slider to excite the system dynamics.
 
@@ -20,211 +15,335 @@ First, a little setup:
 ::
 
     import numpy as np
+    from scipy.integrate import odeint
     import matplotlib.pyplot as plt
     import npsolve
-    from tutorial_2 import run
-    
+
     G = np.array([0, -9.80665])
+
+    SPOS = "slider_pos"
+    SVEL = "slider_vel"
+    PPOS = "pendulum_pos"
+    PVEL = "pendulum_vel"
 
 Here, we've made `G` a 2D vector to represent gravity.
 
-Now we'll get a *wire box*. A wire box is a collection of wires that we'll use
-to pass values. Here's how we do that:
+SPOS and SVEL relate to slider position and velocity, respectively. These
+will be 2-dimensional vectors. PPOS and PVEL relate to pendulum position and
+velocity, which will again be 2-dimensional.
+
+The Slider
+----------
+
+We'll start defining our Slider class. It's going to have a frequency of
+oscilation and a mass.
 
 ::
 
-    import fastwire as fw
-    wire_box = fw.get_wire_box('demo')
-
-You can use `wire_box = fw.get_wire_box('demo')` in any code module and it'll
-get the same wire box, so you don't have to import that object into other
-modules.
-
-Now let's start making the Slider.
-
-::
-
-    class Slider(npsolve.Partial, fw.Wired):
+    class Slider:
         def __init__(self, freq=1.0, mass=1.0):
-            super().__init__() # Don't forget to call this!
             self.freq = freq
             self.mass = mass
-            self.add_var('s_pos', init=np.zeros(2))
-            self.add_var('s_vel', init=np.zeros(2))
 
 
-Importantly, we're inheriting the `fw.Wired` class. That lets us use 
-*fastwire* decorators. We're also making the Slider fully 2D, even though
-at this stage we only want it to move in x.
-
-We're doing to connect the Pendulum to the Slider, and the Pendulum will need
-to know where the Slider is so it can pivot about the right point. Here's 
-how we make the pivot location and velocity available to the Pendulum:
+It's going to have a force applied at a pivot point by another object. We'll
+call in a tether, although it will take both tensile and compressive loads.
+So, we'll set up a method to store the dependency on this value as an 
+attribute to use in other methods on.
 
 ::
 
-    class Slider(npsolve.Partial, fw.Wired):
+    class Slider:
         # ...
         
-        @wire_box.supply('pivot')
-        def pivot(self, t):
-            """ The location of the pivot that connects to the pendulum """
-            return self.state['s_pos'], self.state['s_vel']
-        
-We decorate the method with `@wire_box.supply('pivot')` because we've
-called our wire box `wire_box`. This tells fastwire that this method
-supplies the values referred to by the wire called 'pivot'. We'll pass in
-the current time, `t`, although we don't need it yet.
+        def set_F_tether(self, F_tether):
+            self._F_tether = F_tether
 
-Let's set up a method to create the excitation force:
+The tether will also need to know the position and velocity of the Slider.
+Rather than 'reaching in' to get that data from the state dictionary, we'll
+provide methods to return the position and velocity.
 
 ::
 
-    class Slider(npsolve.Partial, fw.Wired):
+    class Slider:
+        # ...
+        
+        def pos(self, state, t):
+            """The location of the tether connection."""
+            return state[SPOS]
+
+        def vel(self, state, t):
+            """The velocity of the tether connection."""
+            return state[SVEL]
+
+
+We'll also need another method to define the force acting on the Slider at
+any given time. Let's define it like this:
+
+::
+
+    class Slider:
         # ...
         
         def F_sinusoid(self, t):
-            """ The force to make the system do something """
+            """The force to make the system do something."""
             return 10 * np.cos(2 * np.pi * (self.freq * t))
 
 
-Now we can write our `step` method to return the state derivatives by
-doing some basic physics.
+Finally, we'll need to define the derivatives of the Slider's position and
+velocity. The derivative of the position will be the velocity. The derivative
+of velocity is the acceleration, which we can calculate from the force and
+mass.
 
-:: 
+::
 
-    class Slider(npsolve.Partial, fw.Wired):
+    class Slider:
         # ...
         
-        def step(self, state_dct, t, *args):
-            """ Called by the solver at each time step  """
-            F_pivot = -wire_box['F_pivot'].fetch(t)
-            F_pivot_x = F_pivot[0]
+        def get_derivs(self, state, t, log):
+            """Called by the solver at each time step."""
+            F_tether = -self._F_tether
+            F_tether_x = F_tether[0]
             F_sinusoid_x = self.F_sinusoid(t)
-            F_net_x = F_pivot_x + F_sinusoid_x
+            F_net_x = F_tether_x + F_sinusoid_x
             acc = np.array([F_net_x / self.mass, 0])
-            derivatives = {'s_pos': state_dct['s_vel'],
-                           's_vel': acc}
+            derivatives = {SPOS: state[SVEL], SVEL: acc}
             return derivatives
 
-Notice here we're going to pull in a force, `F_pivot`, which is going to be
-calculated by the Pendulum class. We just have to use the `fetch` method
-on the right wire, which here we've called `F_pivot`. For this example,
-we'll also pass in the current time 't' to the method that will 
-supply that force (we haven't written that method yet). We're flipping the
-sign because the slider will see the reaction force.
 
-Now, let's make the Pendulum class.
+The Tether
+----------
+
+Let's define a Tether class to connect the Slider with the Pendulum mass.
+
+We'll give it three attributes:
 
 ::
 
-    class Pendulum(npsolve.Partial, fw.Wired):
-        def __init__(self, mass=1.0, k=1e6, c=1e4, l=1.0):
-            super().__init__() # Don't forget to call this!
-            self.mass = mass
+    class Tether:
+        def __init__(self, k=1e6, c=1e4, length=1.0):
             self.k = k
             self.c = c
-            self.l = l
-            self.add_var('p_pos', init=np.array([0, -self.l]))
-            self.add_var('p_vel', init=np.array([0, 0]))
-            
-Again, we're inheriting fw.Wired. This class has some stiffness (`k`) and 
-damping `c` parameters, along with mass (`mass`) and length (`l`). It needs
-to calculate the force that arises because of it's connection to the Slider.
-We're going to model a very stiff, damped connection between the pivot on the
-Slider and the position of the Pendulum.
+            self.length = length
+
+It has a spring stiffness, k, a damping coefficient, c, and a length.
+
+It will be useful to provide a method that returns a suitable initial position
+for the Pendulum mass. So, let's set one up.
 
 ::
 
-    class Pendulum(npsolve.Partial, fw.Wired):
+    class Tether:
         # ...
-    
-        @wire_box.supply('F_pivot')
-        @npsolve.mono_cached()
-        def F_pivot(self, t):
-            """ Work out the force on the pendulum mass """
-            pivot_pos, pivot_vel = wire_box['pivot'].fetch(t)
-            rel_pos = pivot_pos - self.state['p_pos']
-            rel_vel = pivot_vel - self.state['p_vel']
+
+        def get_pendulum_init(
+            self, slider_pos: np.ndarray[float], force: np.ndarray
+        ):
+            offset = np.array([0, -self.length])
+            stretch = force / self.k
+            return slider_pos + offset + stretch
+
+Lastly, we need the Tether to calculate the force it will apply to the 
+Slider and Particle.
+
+::
+
+    class Tether:
+        # ...
+
+        def F_tether(self, slider_pos, slider_vel, pendulum_pos, pendulum_vel):
+            """Work out the force on the pendulum mass"""
+            rel_pos = slider_pos - pendulum_pos
+            rel_vel = slider_vel - pendulum_vel
             dist = np.linalg.norm(rel_pos)
             unit_vec = rel_pos / dist
-            F_spring = self.k * (dist - self.l) * unit_vec
+            F_spring = self.k * (dist - self.length) * unit_vec
             rel_vel_in_line = np.dot(rel_vel, unit_vec)
             F_damping = self.c * rel_vel_in_line * unit_vec
             return F_spring + F_damping
-            
-We're again using the `@wire_box` decorator so that this method will supply
-the `F_pivot` wire. The return value, the force at the
-pivot, will be used by both the Slider (via the `F_pivot` wire) and the
-Pendulum (directly). We can't assume which object will call the `F_pivot`
-method first, but we don't want to have it calculate the result twice. (This
-is a simple example, but in computationally intensive calculations, reducing
-calculations can be important.) So, we use the `@npsolve.mono_cached()` 
-decorator here as well. This caches the result for the current timestep. 
-Subsequent calls simply return that value. The `mono_cached()` doesn't care
-about the value of arguments. If they might change for the same timestep,
-you can use the `multi_cached()` decorator instead.
 
-Let's add the force of gravity now:
+
+This method depends on the positions and velocities of the Slider and 
+Pendulum mass, and we'll inject these later.
+
+The Pendulum mass
+-----------------
+
+Now we'll make the Pendulum class, which has mass as an attribute. As for the
+Slider, we'll make methods to set the Tether force, get the position, get the
+velocity, and calculate the gravity force.
 
 ::
 
-    class Pendulum(npsolve.Partial, fw.Wired):
-        # ...
+    class Pendulum():
+        def __init__(self, mass=1.0):
+            self.mass = mass
+
+        def set_F_tether(self, F_tether):
+            self._F_tether = F_tether
+
+        def pos(self, state, t):
+            """The location of the tether connection."""
+            return state[PPOS]
+
+        def vel(self, state, t):
+            """The velocity of the tether connection."""
+            return state[PVEL]
 
         def F_gravity(self):
             return self.mass * G
-
-Finally, we'll make the `step` method, doing some basic physics to 
-calculate acceleration.
-
-::
-
-    class Pendulum(npsolve.Partial, fw.Wired):
-        # ...
-
-        def step(self, state_dct, t, *args):
-            ''' Called by the solver at each time step 
-            Calculate acceleration based on the 
-            '''
-            F_net = self.F_pivot(t) + self.F_gravity()
-            acceleration = F_net / self.mass
-            derivatives = {'p_pos': state_dct['p_vel'],
-                           'p_vel': acceleration}
-            return derivatives
             
-
-Before we run, let's make some plot functions...
+Next, we'll add a method to get the derivatives for a given time step.
 
 ::
+
+    class Pendulum():
+        # ...
+    
+        def get_derivs(self, state, t, log):
+            """Called by the solver at each time step
+            Calculate acceleration based on the
+            """
+            F_net = self._F_tether + self.F_gravity()
+            acceleration = F_net / self.mass
+            derivatives = {PPOS: state[PVEL], PVEL: acceleration}
+            return derivatives
+
+The Assembly class
+------------------
+
+Let's make an Assembly class to inject the value dependencies we need.
+
+::
+
+    class Assembly:
+        def __init__(self, slider: Slider, pendulum: Pendulum, tether: Tether):
+            self._slider = slider
+            self._pendulum = pendulum
+            self._tether = tether
+
+        def set_tether_forces(self, state, t, log):
+            slider = self._slider
+            pendulum = self._pendulum
+            slider_pos = slider.pos(state, t)
+            slider_vel = slider.vel(state, t)
+            pendulum_pos = pendulum.pos(state, t)
+            pendulum_vel = pendulum.vel(state, t)
+            F_tether = self._tether.F_tether(
+                slider_pos, slider_vel, pendulum_pos, pendulum_vel
+            )
+            slider.set_F_tether(F_tether)
+            pendulum.set_F_tether(F_tether)
+
+
+Making the System
+-----------------
+
+Now we can create the System like this:
+
+::
+
+    def get_system(freq=1.0):
+        slider = Slider(freq=freq)
+        pendulum = Pendulum()
+        tether = Tether()
+        assembly = Assembly(slider, pendulum, tether)
+        system = npsolve.System()
+        system.add_component(slider, "slider", "get_derivs")
+        system.add_component(pendulum, "pendulum", "get_derivs")
+        system.add_component(tether, "tether", None)
+        system.add_component(assembly, "assembly", None)
+        system.add_stage_call("assembly", "set_tether_forces")
+        return system
+
+
+Initial values
+--------------
+
+We'll use the `get_pendulum_init` method we made earlier to help us set up
+the initial conditions.
+
+::
+
+    def get_inits(system):
+        slider_pos = np.zeros(2)
+        pend_mass = system["pendulum"].mass
+        force = pend_mass * G
+        inits = {
+            SPOS: slider_pos,
+            SVEL: np.zeros(2),
+            PPOS: system["tether"].get_pendulum_init(slider_pos, force),
+            PVEL: np.zeros(2),
+        }
+        return inits
+
+
+Executing and plotting results
+------------------------------
+
+We'll set up some functions to run and plot results.
+
+::
+
+    def run(freq=1.0, t_end=1.0, n=100001):
+        system = get_system(freq=freq)
+        inits = get_inits(system)
+        system.setup(inits)
+        dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1) / t_end)
+        return dct
+
 
     def plot_xs(dct):
-        plt.plot(dct['time'], dct['s_pos'][:,0], label='slider')
-        plt.plot(dct['time'], dct['p_pos'][:,0], label='pendulum')
-        plt.xlabel('time')
-        plt.ylabel('x')
+        plt.figure()
+        plt.plot(dct["time"], dct[SPOS][:, 0], label="slider")
+        plt.plot(dct["time"], dct[PPOS][:, 0], label="pendulum")
+        plt.xlabel("time")
+        plt.ylabel("x")
         plt.legend(loc=3)
-    
-    
+        plt.show()
+
+
     def plot_trajectories(dct):
-        plt.plot(dct['s_pos'][:,0], dct['s_pos'][:,1], label='slider')
-        plt.plot(dct['p_pos'][:,0], dct['p_pos'][:,1], label='pendulum')
-        plt.xlabel('x')
-        plt.ylabel('y')
+        plt.figure()
+        plt.plot(dct[SPOS][:, 0], dct[SPOS][:, 1], label="slider")
+        plt.plot(dct[PPOS][:, 0], dct[PPOS][:, 1], label="pendulum")
+        plt.xlabel("x")
+        plt.ylabel("y")
         plt.xlim(-1.5, 1.5)
         plt.ylim(-1.2, 1.2)
-        plt.gca().set_aspect('equal')
+        plt.gca().set_aspect("equal")
         plt.legend(loc=2)
+        plt.show()
+
+
+    def plot_distance_check(dct):
+        plt.figure()
+        diff = dct[PPOS] - dct[SPOS]
+        dist = np.linalg.norm(diff, axis=1)
+        plt.plot(dct["time"], dist)
+        plt.xlabel("time")
+        plt.ylabel("length")
+        plt.show()
+
+
 
 Finally, we'll make a little function to run the model and plot the results.
 
 ::
 
-    def execute(freq):
-        partials = [Slider(freq=freq), Pendulum()]
-        dct = run(partials, t_end=10.0, n=10001)
+    def execute(freq=1.0):
+        # Also try freq=0.7, t_end=60.0, where it bifurcates into chaotic motion.
+        dct = run(freq=1.0, t_end=60.0, n=10001)
         plot_xs(dct)
-        plot_trajectories(dct)    
+        plot_trajectories(dct)
+        plot_distance_check(dct)
+
+
+    if __name__ == "__main__":
+        execute() 
+
+Results
+-------
 
 Let's see what happens at 2 Hz:
 
@@ -274,13 +393,6 @@ very very close to 1.0. Let's plot the distance:
 
 :: 
 
-    def plot_distance_check(dct):
-        diff = dct['p_pos'] - dct['s_pos']
-        dist = np.linalg.norm(diff, axis=1)
-        plt.plot(dct['time'], dist)
-        plt.xlabel('time')
-        plt.ylabel('length')
-    
     plot_distance_check(dct)
 
 

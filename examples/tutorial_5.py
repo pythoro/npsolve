@@ -13,7 +13,7 @@ import npsolve
 import numpy as np
 import matplotlib.pyplot as plt
 from tutorial_3 import Particle, POS
-from tutorial_4 import Pendulum, Tether, Assembly, PPOS, PVEL
+from tutorial_4 import Pendulum, Tether, Assembly, PPOS, PVEL, G
 
 
 class Particle2(Particle):
@@ -30,13 +30,13 @@ class Particle2(Particle):
         return velocity
 
 
-def get_system():
+def get_system(k=1e7, c=1e4):
     np.random.seed(0)
     time_points = np.linspace(0, 1, 51)
     positions = np.random.rand(51, 2) * 10
     particle = Particle2(time_points, positions)
     pendulum = Pendulum()
-    tether = Tether(k=1e7, c=1e4)
+    tether = Tether(k=k, c=c)
     assembly = Assembly(particle, pendulum, tether)
     system = npsolve.System()
     system.add_component(particle, "particle", "step")
@@ -50,16 +50,17 @@ def get_system():
 def get_inits(system):
     slider_pos = system["particle"].get_init_pos()
     pend_mass = system["pendulum"].mass
+    force = pend_mass * G
     inits = {
         POS: slider_pos,
-        PPOS: system["tether"].get_pendulum_init(slider_pos, pend_mass),
+        PPOS: system["tether"].get_pendulum_init(slider_pos, force),
         PVEL: np.zeros(2),
     }
     return inits
 
 
-def run(t_end=1.0, n=100001):
-    system = get_system()
+def run(system=None, t_end=1.0, n=100001):
+    system = get_system() if system is None else system
     inits = get_inits(system)
     system.setup(inits)
     dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1) / t_end)
@@ -90,7 +91,8 @@ def plot_distance_check(dct):
 
 
 def execute():
-    dct = run()
+    system = get_system(k=1e9, c=1e7)
+    dct = run(system)
     plot_trajectories(dct)
     plot_distance_check(dct)
 

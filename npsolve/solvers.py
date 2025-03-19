@@ -51,6 +51,12 @@ class Logger:
             data_dct[key] = data
         return data_dct
 
+    def get_log_data(self):
+        return self._log_data
+
+    def get_state_for_frame(self, i):
+        return self._log_data[i]
+
 
 class ODEIntegrator:
     def __init__(
@@ -122,7 +128,18 @@ class ODEIntegrator:
         return data_dct
 
 
-def integrate(system, t_end, framerate):
-    ode_integrator = ODEIntegrator(framerate=framerate)
+def integrate(system,
+        t_end,
+        framerate, 
+        interface_cls=None,
+        integrator_name="lsoda",
+        integrator_kwargs=None
+    ):
+    ode_integrator = ODEIntegrator(
+        framerate=framerate,
+        interface_cls=interface_cls,
+        integrator_name=integrator_name,
+        integrator_kwargs=integrator_kwargs
+    )
     dct = ode_integrator.run(system, t_end)
     return dct

@@ -5,8 +5,10 @@ Package documentation
    :maxdepth: 2
 
    npsolve
-   npsolve.core
-   npsolve.cache
    npsolve.soft_functions
+   npsolve.core
    npsolve.solvers
-   npsolve.utils
+   npsolve.legacy.legacy_core
+   npsolve.legacy.legacy_cache
+   npsolve.legacy.legacy_solvers
+   npsolve.legacy.legacy_utils

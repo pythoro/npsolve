@@ -23,37 +23,35 @@ it bounces on. Let's start with some setup:
     import numpy as np
     from scipy.integrate import odeint
     import matplotlib.pyplot as plt
-    
+
     import npsolve
     from npsolve.soft_functions import negdiff, below
-    
+
     G = -9.80665
     Y_SURFACE = 1.5
     X_LEDGE = 2.0
     Y_LEDGE = 5.0
+    POS = "position"
+    VEL = "velocity"
     
-Now we'll start writing our Ball class. We'll give it some mass, an initial
-x-velocity, and some parameters to control how it bounces. We'll create the
-bouncing by a combination of spring-like behaviour and velocity-dependent
+Both `POS` and `VEL` will be np.arrays of length 2, representing values in 
+the x and y axes.
+
+The Ball class
+--------------
+
+Now we'll start writing our Ball class. We'll give it some mass and some
+parameters to control how it bounces. We'll create the bouncing by a
+combination of spring-like behaviour and velocity-dependent
 damping. Here's the constructor:
 
 :: 
 
-    class Ball(npsolve.Partial):
-        def __init__(self, mass=1.0,
-                     k_bounce=1e7,
-                     c_bounce=3e3,
-                     initial_vel=5.0):
-            super().__init__() # Don't forget to call this!
+    class Ball:
+        def __init__(self, mass=1.0, k_bounce=1e7, c_bounce=3e3):
             self.mass = mass
             self.k_bounce = k_bounce
             self.c_bounce = c_bounce
-            self.add_var('position', init=np.array([0.0, Y_LEDGE]))
-            self.add_var('velocity', init=np.array([initial_vel, 0.0]))
-
-Notice here that the `position` and `velocity` variables are 1D numpy
-ndarrays of size 2, to reflect x and y axes. *npsolve* handles variables of 
-1D arrays!
 
 Let's create a method in the Ball class to calculate the force of gravity on
 the ball.
@@ -75,8 +73,8 @@ until the ball reaches the edge of the ledge with another method:
     class Ball():
         # ...
         
-        def F_ledge(self):
-            x_pos = self.state['position'][0]
+        def F_ledge(self, state):
+            x_pos = state[POS][0]
             return -self.F_gravity() * below(x_pos, limit=X_LEDGE)
 
 Here, we're using the `below` soft function. It's 1 below a limit
@@ -93,10 +91,10 @@ surface. This one is a bit more complex:
     class Ball():
         # ...
         
-        def F_bounce(self):
-            """ Force bouncing on the surface """
-            y_pos = self.state['position'][1]
-            y_vel = self.state['velocity'][1]
+        def F_bounce(self, state):
+            """Force bouncing on the surface"""
+            y_pos = state[POS][1]
+            y_vel = state[VEL][1]
             F_spring = -self.k_bounce * negdiff(y_pos, limit=Y_SURFACE)
             c_damping = -self.c_bounce * below(y_pos, Y_SURFACE)
             F_damping = c_damping * negdiff(y_vel, limit=0)
@@ -123,69 +121,87 @@ Now we can set up the `step` method that gets called by the integrator.
     class Ball():
         # ...
         
-        def step(self, state_dct, t, *args):
-            """ Called by the solver at each time step """
-            F_net = self.F_gravity() + self.F_ledge() + self.F_bounce()
+        def step(self, state, t, log):
+            """Called by the solver at each time step"""
+            F_net = self.F_gravity() + self.F_ledge(state) + self.F_bounce(state)
             acceleration = F_net / self.mass
-            derivatives = {'position': self.state['velocity'],
-                           'velocity': acceleration}
+            derivatives = {POS: state[VEL], VEL: acceleration}
             return derivatives
 
 This just sums the forces, calculates the acceleration by applying elementary
 physics, then returns the acceleration.
 
-Now let's set up the Solver:
+
+The System
+----------
+
+Now let's set up the System:
 
 ::
 
-    class Solver(npsolve.Solver):
-        def solve(self, t_end=3.0, n=100001):
-            self.npsolve_init() # Initialise
-            t_vec = np.linspace(0, t_end, n)
-            solution = odeint(self.step, self.npsolve_initial_values, t_vec)
-            dct = self.as_dct(solution)
-            dct['time'] = t_vec
-            return dct
+    def get_system():
+        ball = Ball()
+        system = npsolve.System()
+        system.add_component(ball, "ball", "step")
+        return system
             
-This is very much like the solver in the quickstart example. Here though, 
-we're using the `as_dct` method to convert the outputs to a dictionary, in
-which each key is variable name, and each value is an array of the values
-through time.
+This system configuration is extremely simple, with only one component with
+one final call to get the derivatives.
 
-Let's set up a function to run it and plot the results.
+Running
+-------
+
+We'll use `npsolve.integrate` to solve the solution.
 
 ::
 
-    def run(partials, t_end=3.0, n=100001):
-        solver = Solver()
-        solver.connect(partials)
-        return solver.solve(t_end=t_end, n=n)
+    def run(t_end=3.0, n=100001):
+        system = get_system()
+        inits = {
+            POS: np.array([0.0, Y_LEDGE]),
+            VEL: np.array([5.0, 0.0]),
+        }
+        system.setup(inits)
+        dct = npsolve.integrate(system, t_end=t_end, framerate=(n - 1) / t_end)
+        return dct
     
-    def plot(dct):
-        plt.plot(dct['position'][:,0], dct['position'][:,1], label='position')
-        plt.axhline(Y_SURFACE, c='r')
-        plt.plot([0, X_LEDGE], [Y_LEDGE, Y_LEDGE], 'r:')
-        plt.ylim(0, 6)
-        plt.xlabel('x')
-        plt.ylabel('y')
-        
-Here, we're making the run method a bit more generic. It's going to take 
-a list of Partial instances, connect them to the solver, call the solve 
-method, then return the result and the partials.
-Now we can run it!
+
+We'll also add a function to plot results.
 
 ::
 
-    ball = Ball()
-    dct = run(ball)
-    plot(dct)
+    def plot(dct):
+        plt.figure()
+        plt.plot(dct[POS][:, 0], dct[POS][:, 1], label="position")
+        plt.axhline(Y_SURFACE, c="r")
+        plt.plot([0, X_LEDGE], [Y_LEDGE, Y_LEDGE], "r:")
+        plt.ylim(0, 6)
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.show()
+
+Results
+-------
+
+Let's add function to run it and plot results.
+
+::
+
+    def execute():
+        dct = run()
+        plot(dct)
+
+
+    if __name__ == "__main__":
+        execute()
     
 We've made a bouncing ball!
 
 .. image:: ../../examples/tutorial_2a.png
     :width: 600
 
-If we zoom way in on the bounce, you can see it's actually smooth.
+If we zoom way in on the bounce, you can see it's actually smooth. This is 
+because of the soft function we used.
 
 .. image:: ../../examples/tutorial_2b.png
     :width: 600
