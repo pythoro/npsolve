@@ -1,6 +1,6 @@
 [project]
 name = "npsolve"
-version = "0.2.1"
+version = "1.0.3"
 description = "Easier object-oriented calculations for numerical solvers."
 authors = [{ name = "Reuben Rusk", email = "pythoro@mindquip.com" }]
 requires-python = "~=3.9"
