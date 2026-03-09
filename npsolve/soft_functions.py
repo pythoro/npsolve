@@ -16,7 +16,7 @@ SCALARISE = True
 
 
 def lim(x, limit=0.0, side=1, scale=DEFAULT_SCALE):
-    """Limit the value softly to prevent discontinuous gradient
+    """Limit the value softly to prevent discontinuous gradient.
 
     Args:
         x (int, float, ndarray): The value(s) to soft limit
@@ -52,7 +52,7 @@ def lim(x, limit=0.0, side=1, scale=DEFAULT_SCALE):
 
 
 def floor(x, limit=0.0, scale=DEFAULT_SCALE):
-    """Limit value to a minimum softly to to prevent discontinuous gradient
+    """Limit value to a minimum softly to to prevent discontinuous gradient.
 
     Args:
         x (int, float, ndarray): The value(s) to soft limit
@@ -84,7 +84,7 @@ def floor(x, limit=0.0, scale=DEFAULT_SCALE):
 
 
 def ceil(x, limit=0.0, scale=DEFAULT_SCALE):
-    """Limit value to a maximum softly to to prevent discontinuous gradient
+    """Limit value to a maximum softly to to prevent discontinuous gradient.
 
     Args:
         x (int, float, ndarray): The value(s) to soft limit
@@ -97,7 +97,6 @@ def ceil(x, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_limit
     """
-
     if isinstance(x, np.ndarray):
         if x.size > 1 or not SCALARISE:
             rel = -(x - limit) / scale
@@ -117,7 +116,7 @@ def ceil(x, limit=0.0, scale=DEFAULT_SCALE):
 
 
 def clip(x, lower, upper, scale=DEFAULT_SCALE):
-    """Limit value to a range softly to to prevent discontinuous gradient
+    """Limit value to a range softly to to prevent discontinuous gradient.
 
     Args:
         x (int, float, ndarray): The value(s) to soft limit
@@ -136,7 +135,7 @@ def clip(x, lower, upper, scale=DEFAULT_SCALE):
 
 
 def posdiff(x, limit=0.0, scale=DEFAULT_SCALE):
-    """Positive-only difference (0 below limit to difference above limit)
+    """Positive-only difference (0 below limit to difference above limit).
 
     Args:
         x (int, float, ndarray): The value(s) to soft limit
@@ -167,7 +166,7 @@ def posdiff(x, limit=0.0, scale=DEFAULT_SCALE):
 
 
 def negdiff(x, limit=0.0, scale=DEFAULT_SCALE):
-    """Negative-only difference (difference below limit to 0 above limit)
+    """Negative-only difference (difference below limit to 0 above limit).
 
     Args:
         x (int, float, ndarray): The value(s) to soft limit
@@ -180,7 +179,6 @@ def negdiff(x, limit=0.0, scale=DEFAULT_SCALE):
     See also:
         soft_limit
     """
-
     if isinstance(x, np.ndarray):
         if x.size > 1 or not SCALARISE:
             rel = -(x - limit) / scale
@@ -199,7 +197,7 @@ def negdiff(x, limit=0.0, scale=DEFAULT_SCALE):
 
 
 def step(x, limit=0.0, side=1, scale=DEFAULT_SCALE):
-    """A smooth step to prevent discontinuous gradient
+    """A smooth step to prevent discontinuous gradient.
 
     Args:
         x (int, float, ndarray): The value(s)
@@ -228,7 +226,7 @@ def step(x, limit=0.0, side=1, scale=DEFAULT_SCALE):
 
 
 def above(x, limit=0.0, scale=DEFAULT_SCALE):
-    """A smooth step from 0 below a limit to 1 above it
+    """A smooth step from 0 below a limit to 1 above it.
 
     Args:
         x (int, float, ndarray): The value(s)
@@ -254,7 +252,7 @@ def above(x, limit=0.0, scale=DEFAULT_SCALE):
 
 
 def below(x, limit=0.0, scale=DEFAULT_SCALE):
-    """A smooth step from 1 below a limit to 0 above it
+    """A smooth step from 1 below a limit to 0 above it.
 
     Args:
         x (int, float, ndarray): The value(s)
@@ -280,7 +278,7 @@ def below(x, limit=0.0, scale=DEFAULT_SCALE):
 
 
 def within(x, lower, upper, scale=DEFAULT_SCALE):
-    """Steps smoothly from 0 outside a range to 1 inside it
+    """Steps smoothly from 0 outside a range to 1 inside it.
 
     Args:
         x (int, float, ndarray): The value(s)
@@ -300,7 +298,7 @@ def within(x, lower, upper, scale=DEFAULT_SCALE):
 
 
 def outside(x, lower, upper, scale=DEFAULT_SCALE):
-    """Steps smoothly from 1 outside a range to 0 inside it
+    """Steps smoothly from 1 outside a range to 0 inside it.
 
     Args:
         x (int, float, ndarray): The value(s)
@@ -320,7 +318,7 @@ def outside(x, lower, upper, scale=DEFAULT_SCALE):
 
 
 def sign(x, scale=DEFAULT_SCALE):
-    """A smooth step from -1 below 0 to +1 above it
+    """A smooth step from -1 below 0 to +1 above it.
 
     Args:
         x (int, float, ndarray): The value(s)
@@ -345,7 +343,7 @@ def sign(x, scale=DEFAULT_SCALE):
 
 
 def gaussian(x, center=0.0, scale=DEFAULT_SCALE):
-    """A gaussian function, with a peak of 1.0
+    """A gaussian function, with a peak of 1.0.
 
     Args:
         x (int, float, ndarray): The value(s)

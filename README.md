@@ -22,6 +22,7 @@ Advantages:
 * Introduces very little overhead in calculation time
 * Explicit, customisable steps in the calculation for each time step
 * Able to be used with any solver
+* Can use TypedDict to improve static type checking.
 
 
 ## Basic usage tutorial

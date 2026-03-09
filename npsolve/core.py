@@ -8,11 +8,10 @@ Npsolve has a simple, small core. It's designed to give good flexibility,
 without compromising on performance.
 
 """
-
 from __future__ import annotations
 
 import numpy as np
-
+from numpy.typing import NDArray
 
 class Slicer:
     """Manage variable arrays and views of those arrays.
@@ -26,7 +25,7 @@ class Slicer:
 
     """
 
-    def __init__(self, dct: dict[str : np.ndarray] | None = None) -> None:
+    def __init__(self, dct: dict[str, NDArray] | None = None) -> None:
         """Create a new instance.
 
         Args:
@@ -39,7 +38,7 @@ class Slicer:
             self.add_dict(dct)
 
     @property
-    def slices(self) -> dict[str:slice]:
+    def slices(self) -> dict[str, slice]:
         """Return the slice mapping for a full array."""
         return self._slices.copy()
 
@@ -85,7 +84,7 @@ class Slicer:
 
     def get_view(
         self, vec: np.ndarray, key: str, writeable: bool
-    ) -> np.ndarray[float]:
+    ) -> NDArray:
         """Return a view of the full vector for a specific key.
 
         Args:
@@ -102,7 +101,7 @@ class Slicer:
         view.flags.writeable = writeable
         return view
 
-    def get_state_vec(self, dct: dict[str : np.ndarray | float]) -> np.ndarray:
+    def get_state_vec(self, dct: dict[str, NDArray]) -> NDArray:
         """Return a full vector filled with entries from a dictionary.
 
         Args:
@@ -110,7 +109,7 @@ class Slicer:
                 those previously added to the Slicer.
 
         Returns:
-            np.ndarray: The full np.ndarray containing the data from the
+            NDArray: The full np.ndarray containing the data from the
             dictionary in the appropriate indices.
         """
         state = np.zeros(self._i)
@@ -119,8 +118,8 @@ class Slicer:
         return state
 
     def get_state(
-        self, state_vec: np.ndarray[float], writeable: bool = False
-    ) -> dict[str : np.ndarray]:
+        self, state_vec: NDArray, writeable: bool = False
+    ) -> dict[str, NDArray]:
         """Return a state dictionary, given a full vector.
 
         Args:
@@ -150,14 +149,28 @@ class System:
         return self._components[component_name]
 
     @property
-    def components(self) -> dict[str:object]:
+    def components(self) -> dict[str, object]:
         """Return the dictionary of all added components, keyed by name."""
         return self._components
 
     @property
-    def slices(self) -> dict[str:slice]:
+    def slices(self) -> dict[str, slice]:
         """Dictionary of all variables and thier slices of the state vec."""
         return self.slicer.slices
+
+    def get_component(self, name: str) -> object:
+        """Return the component with the given name.
+
+        Args:
+            name (str): The name of the component to return.
+
+        Returns:
+            object: The component object, if found.
+
+        Raises:
+            KeyError: If the component is not found.
+        """
+        return self._components[name]
 
     def add_component(
         self, component: object, name: str, deriv_method_name: str | None
@@ -189,7 +202,7 @@ class System:
                 ) from e
             self._deriv_methods[name] = method
 
-    def set_stage_calls(self, stage_calls: list[str, str]) -> None:
+    def set_stage_calls(self, stage_calls: list[tuple[str, str]]) -> None:
         """Set all stage calls during a time step.
 
         Args:
@@ -229,7 +242,7 @@ class System:
             ) from e
         self._stage_calls.append((component_name, method))
 
-    def set_initialise_calls(self, init_calls: list[str, str]) -> None:
+    def set_initialise_calls(self, init_calls: list[tuple[str, str]]) -> None:
         """Set all initialise calls, prior to the first time step.
 
         Args:
@@ -281,9 +294,9 @@ class System:
 
     def _initialise_components(
         self,
-        state: dict[str : np.ndarray],
+        state: dict[str, NDArray],
         t: float,
-        log: dict[str : np.ndarray | float] | None,
+        log: dict[str, NDArray | float] | None,
         *args: float,
         **kwargs: float,
     ) -> None:
@@ -304,7 +317,7 @@ class System:
         for _, method in self._initialise_calls:
             method(state, t, log, *args, **kwargs)
 
-    def setup(self, inits: dict[str : np.ndarray | float]) -> None:
+    def setup(self, inits: dict[str, NDArray]) -> None:
         """Setup the System.
 
         Args:
@@ -335,12 +348,12 @@ class System:
 
     def step(
         self,
-        vec: np.ndarray[float],
+        vec: NDArray,
         t: float,
         log: dict | None = None,
         *args: float,
         **kwargs: float,
-    ) -> np.ndarray[float]:
+    ) -> NDArray:
         """Call the components for the time step and return derivatives.
 
         Args:
@@ -373,11 +386,11 @@ class System:
     def tstep(
         self,
         t: float,
-        vec: np.ndarray[float],
+        vec: NDArray,
         log: dict | None = None,
         *args: float,
         **kwargs: float,
-    ) -> np.ndarray[float]:
+    ) -> NDArray:
         """Call the components for the time step and return derivatives.
 
         Args:
@@ -412,8 +425,8 @@ class System:
         return self._ret_vec
 
     def get_state(
-        self, state_vec: np.ndarray[float]
-    ) -> dict[str : np.ndarray]:
+        self, state_vec: NDArray
+    ) -> dict[str, NDArray]:
         """Get the state dictionary, given the state vec.
 
         Args:
