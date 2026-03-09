@@ -121,7 +121,7 @@ class ODEIntegrator:
         while integrator.successful() and t < end and not stop:
             t = t + dt
             state_vec = integrator.integrate(t)
-            log = logger.log(state_vec, t)
+            log = logger.log(state_vec.copy(), t)
             if log[STOP]:
                 stop = True
         data_dct = logger.get_data_dct()
